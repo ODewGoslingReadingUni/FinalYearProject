@@ -72,3 +72,6 @@ fabric.properties
 .idea/compiler.xml
 .idea/misc.xml
 .idea/modules.xml
+target/
+ ~$g Book.docx
+~WRL1208.tmp
