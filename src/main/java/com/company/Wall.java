@@ -1,33 +1,57 @@
 package com.company;
 
-import java.awt.Point;
+
+import java.util.ArrayList;
 
 public class Wall {
-    private Point point1;
-    private Point point2;
+    private float x1;
+    private float y1;
 
-    public Wall(int x1, int x2, int y1, int y2){
-        point1 = new Point(x1, y1);
-        point2 = new Point(x2, y2);
+    private float x2;
+    private float y2;
+
+    public Wall(float x1, float x2, float y1, float y2){
+        this.x1 = x1;
+        this.x2 = x2;
+        this.y1 = y1;
+        this.y2 = y2;
     }
 
-    public Point getPoint1(){
-        return point1;
+    public float getX1(){
+        return x1;
     }
 
-    public Point getPoint2(){
-        return point2;
+    public float getX2(){
+        return x2;
+    }
+
+    public float getY1(){
+        return y1;
+    }
+
+    public float getY2(){
+        return y2;
     }
 
     public void setPoint1(int x, int y){
-        point1.x = x;
-        point1.y = y;
+        x1 = x;
+        y1 = y;
     }
 
     public void setPoint2(int x, int y){
-        point2.x = x;
-        point2.y = y;
+        x2 = x;
+        y2 = y;
     }
 
+    public ArrayList<Coordinate> getCollisionBox() {
+        ArrayList<Coordinate> coordinates = new ArrayList<>();
+        coordinates.add(new Coordinate(x1, y1));
+        coordinates.add(new Coordinate(x2, y2));
+        return coordinates;
+    }
 
+    public boolean testForCollision(float x, float y){
+        if(x > x1 && x < x2 && y > y1 && y < y2) return true;
+        else return false;
+    }
 }
