@@ -9,6 +9,10 @@ public class Activity {
         this.y = y;
     }
 
+    public Activity(){
+
+    }
+
     public void setPoint(float x, float y){
         this.x = x;
         this.y = y;

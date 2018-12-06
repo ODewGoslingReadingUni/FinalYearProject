@@ -1,6 +1,5 @@
 package com.company;
 
-
 import java.util.ArrayList;
 
 public class Wall {
@@ -53,5 +52,13 @@ public class Wall {
     public boolean testForCollision(float x, float y){
         if(x > x1 && x < x2 && y > y1 && y < y2) return true;
         else return false;
+    }
+
+    public float getWidth(){
+        return Math.abs(x1-x2);
+    }
+
+    public float getHeight(){
+        return Math.abs(y1-y2);
     }
 }

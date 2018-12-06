@@ -8,7 +8,7 @@ import java.util.Collections;
 public class Person {
     private float x;
     private float y;
-    private final int RADIUS = 10;
+    private final int RADIUS = 5;
     private Color colour;
 
     private ArrayList<Activity> activities;
@@ -26,6 +26,13 @@ public class Person {
         pathStage = 0;
     }
 
+    public Person(float x, float y, Color colour, ArrayList<Activity> schedule){
+        this.x = x;
+        this.y = y;
+        this.colour = colour;
+        this.activities = schedule;
+    }
+
     public float getX(){
         return x;
     }
@@ -38,8 +45,24 @@ public class Person {
         return RADIUS;
     }
 
+    public Color getColour(){
+        return colour;
+    }
+
     public void addActivity(int x, int y){
         activities.add(new Activity(x,y));
+    }
+
+    public void addActivity(Activity activity){
+        activities.add(activity);
+    }
+
+    public void setSchedule(ArrayList<Activity> schedule){
+        activities = schedule;
+    }
+
+    public ArrayList<Activity> getSchedule(){
+        return activities;
     }
 
     public Activity getCurrentActivity(){
@@ -54,13 +77,15 @@ public class Person {
         final float INCREMENT = 4;
 
         //Move if there's a path to follow
-        if(path.size() > 1){
+        if(path.size() > 1 && pathStage < path.size()){
             Coordinate next = path.get((int)Math.floor(pathStage));
             if(next.x > x) x += INCREMENT / timePeriod;
             if(next.y > y) y += INCREMENT / timePeriod;
             if(next.x < x) x -= INCREMENT / timePeriod;
             if(next.y < y) y -= INCREMENT / timePeriod;
             pathStage += 1/timePeriod;
+        } else if(pathStage >= path.size()){
+            goToNextActivity(building);
         }
 
         //Get target coordinates
@@ -69,11 +94,7 @@ public class Person {
         float targetY = a.getY();
 
         if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
-            if(activityCount < activities.size() - 1) activityCount++;
-            else activityCount = 0;
-
-            path = findPath(building,x,y,getCurrentActivity().getX(), getCurrentActivity().getY());
-            pathStage = 0;
+            goToNextActivity(building);
         }
     }
 
@@ -182,5 +203,11 @@ public class Person {
         list.add(c);
     }
 
+    private void goToNextActivity(Building building){
+        if(activityCount < activities.size() - 1) activityCount++;
+        else activityCount = 0;
 
+        path = findPath(building,x,y,getCurrentActivity().getX(), getCurrentActivity().getY());
+        pathStage = 0;
+    }
 }
