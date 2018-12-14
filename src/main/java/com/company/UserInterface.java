@@ -7,6 +7,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -18,9 +19,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -77,6 +76,7 @@ public class UserInterface extends Application {
         //Play animation
         timer.start();
         playAnimation = true;
+        pauseAnimation();
     }
 
     public static void main(String[] args) {
@@ -162,8 +162,18 @@ public class UserInterface extends Application {
         fileMenuItems.add(exitMenuItem);
 
         Menu fileMenu = createMenu("File", fileMenuItems);
-
         menuBar.getMenus().add(fileMenu);
+
+        MenuItem addPersonItem = new MenuItem("Add new person");
+        addPersonItem.setOnAction(actionEvent -> {
+            createEditPersonMenu(null);
+        });
+
+        ArrayList<MenuItem> editMenuItems = new ArrayList<>();
+        editMenuItems.add(addPersonItem);
+
+        Menu editMenu = createMenu("Edit", editMenuItems);
+        menuBar.getMenus().add(editMenu);
 
         return menuBar;
     }
@@ -237,8 +247,8 @@ public class UserInterface extends Application {
     }
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
-        gc.setFill(Color.FORESTGREEN);
         for(Person p: people){
+            gc.setFill(p.getColour());
             gc.fillOval(p.getX(), p.getY(), p.getRadius(), p.getRadius());
         }
     }
@@ -302,7 +312,7 @@ public class UserInterface extends Application {
         button.visibleProperty().bind(Bindings.createBooleanBinding(() -> editMode.get(), editMode));
         button.managedProperty().bind(Bindings.createBooleanBinding(() -> editMode.get(), editMode));
         button.setOnAction( actionEvent -> {
-            createAddPersonMenu();
+            createEditPersonMenu(null);
         });
         return button;
     }
@@ -346,54 +356,41 @@ public class UserInterface extends Application {
 
     }
 
-    private Stage createAddPersonMenu(){
-        Controller.tempPerson = new Person(0,0);
+    private Stage createEditPersonMenu(Person person){
+
+        startEditing();
 
         Stage editStage = new Stage();
         editStage.initOwner(rootStage);
-        editStage.setWidth(256);
-        editStage.setHeight(256);
-        editStage.setTitle("New Person");
+        editStage.setWidth(800);
+        editStage.setHeight(400);
+        if(person != null) editStage.setTitle(person.getName());
+        else editStage.setTitle("New Person");
 
         VBox vbox = new VBox();
         vbox.setPadding(new Insets(10, 10, 10, 10));
         vbox.setSpacing(5);
 
+        TextField textFieldName = addTextInputFieldToParent(vbox, "name: ");
         TextField textFieldX = addTextInputFieldToParent(vbox, "x: ");
         TextField textFieldY = addTextInputFieldToParent(vbox, "y: ");
         ColorPicker cp = addColorPickerToParent(vbox, "Dot Colour: ");
 
-        TableView<Activity> tableView = new TableView<Activity>();
-
-        TableColumn xColumn = new TableColumn<Activity, String>("X Coordinate");
-        TableColumn yColumn = new TableColumn<Activity, String>("Y Coordinate");
-        TableColumn orderColumn = new TableColumn<Activity, String>("Order");
-        TableColumn nameColumn = new TableColumn<Activity, String>("Activity Name");
-
-        tableView.getColumns().addAll(orderColumn, xColumn, yColumn);
-        tableView.editableProperty().set(true);
-        tableView.setEditable(true);
-
-        vbox.getChildren().add(tableView);
-
-        ArrayList<Activity> schedule = new ArrayList<>();
+        EditableTableFX table = new EditableTableFX(vbox, "Schedule");
 
         Button addActivityButton = new Button("Add Activity");
         addActivityButton.setOnAction(actionEvent -> {
-            Controller.tempPerson.addActivity(new Activity());
-            tableView.setItems(FXCollections.observableList(Controller.tempPerson.getSchedule()));
+            table.addNewRow();
         });
 
-        Button addPersonButton = new Button("Add Person");
+        Button addPersonButton = new Button("Save");
         addPersonButton.setOnAction(actionEvent -> {
-            Controller.addPersonWithSchedule(
-                    Helper.getFloatFromTextField(textFieldX),
-                    Helper.getFloatFromTextField(textFieldY),
-                    cp.getValue(),
-                    new ArrayList<Activity>());
+            Controller.upsertPerson(new Person(textFieldName.getText(), Float.parseFloat(textFieldX.getText()), Float.parseFloat(textFieldY.getText()), cp.getValue(), table.getData()));
             updateEditPane();
+            editStage.close();
         });
 
+        vbox.getChildren().add(addActivityButton);
         vbox.getChildren().add(addPersonButton);
 
         Scene scene = new Scene(vbox);
@@ -403,7 +400,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private TextField addTextInputFieldToParent(Pane parent, String name){
+    public static TextField addTextInputFieldToParent(Pane parent, String name){
         HBox hbox = new HBox();
         TextField tf = new TextField();
 
@@ -469,7 +466,8 @@ public class UserInterface extends Application {
 
         ArrayList<Person> people = Controller.getPeopleLocations();
         for(Person p: people){
-            Circle circle = new Circle(p.getX(), p.getY(), p.getRadius(), p.getColour());
+            Circle circle = new Circle(p.getX(), p.getY(), p.getRadius()/2, p.getColour());
+            circle.setCursor(Cursor.HAND);
             editPane.getChildren().add(circle);
         }
     }
@@ -487,7 +485,6 @@ public class UserInterface extends Application {
         pauseAnimation();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save File");
-        //fileChooser.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("XML Files (*.xml)", "*.xml"));
         File file = fileChooser.showSaveDialog(rootStage);
         Controller.saveAs(file);
     }

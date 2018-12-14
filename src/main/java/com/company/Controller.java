@@ -81,7 +81,13 @@ public class Controller {
             }
 
             for (Person p: getPeopleLocations()){
+                System.out.println("number of people: " + getPeopleLocations().size());
+
                 Element personElement = doc.createElement("Person");
+
+                Element nameElement = doc.createElement("name");
+                nameElement.setTextContent(p.getName());
+                personElement.appendChild(nameElement);
 
                 Element x1Element = doc.createElement("x");
                 x1Element.setTextContent("" + p.getX());
@@ -93,7 +99,8 @@ public class Controller {
 
                 Element colourElement = doc.createElement("Colour");
                 colourElement.setTextContent(Helper.colorToRGBCode(p.getColour()));
-                System.out.println("" + Helper.colorToRGBCode(p.getColour()));
+                personElement.appendChild(colourElement);
+                //System.out.println("" + Helper.colorToRGBCode(p.getColour()));
 
                 Element scheduleElement = doc.createElement("Schedule");
 
@@ -111,10 +118,18 @@ public class Controller {
                 }
 
                 personElement.appendChild(scheduleElement);
+                buildingElement.appendChild(personElement);
             }
 
             //Rename file
-            File file2 = new File(file.getAbsolutePath() + ".xml");
+            File file2;
+            System.out.println(Helper.getFileExtension(file));
+
+            if(Helper.getFileExtension(file).equals("xml")){
+                file2 = new File(file.getAbsolutePath());
+            } else{
+                file2 = new File(file.getAbsolutePath() + ".xml");
+            }
 
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -155,12 +170,11 @@ public class Controller {
             //Was recommended to do this
             doc.getDocumentElement().normalize();
 
-            NodeList nodeList = doc.getElementsByTagName("Wall");
-            ArrayList<Wall> wallList = new ArrayList<>();
+            NodeList wallNodeList = doc.getElementsByTagName("Wall");
 
-            for(int i = 0; i < nodeList.getLength(); i++) {
-                if(nodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
-                    Element current = (Element)nodeList.item(i);
+            for(int i = 0; i < wallNodeList.getLength(); i++) {
+                if(wallNodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
+                    Element current = (Element)wallNodeList.item(i);
                     float x1 = Float.parseFloat(current.getElementsByTagName("x1").item(0).getTextContent());
                     float x2 = Float.parseFloat(current.getElementsByTagName("x2").item(0).getTextContent());
                     float y1 = Float.parseFloat(current.getElementsByTagName("y1").item(0).getTextContent());
@@ -174,11 +188,11 @@ public class Controller {
             }
 
             NodeList personNodeList = doc.getElementsByTagName("Person");
-            ArrayList<Person> personList = new ArrayList<>();
 
             for(int i = 0; i < personNodeList.getLength(); i++){
-                if(nodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
-                    Element current = (Element)nodeList.item(i);
+                if(personNodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
+                    Element current = (Element)personNodeList.item(i);
+                    String name = current.getElementsByTagName("name").item(0).getTextContent();
                     float x = Float.parseFloat(current.getElementsByTagName("x").item(0).getTextContent());
                     float y = Float.parseFloat(current.getElementsByTagName("y").item(0).getTextContent());
                     Color color = Color.web(current.getElementsByTagName("Colour").item(0).getTextContent());
@@ -192,7 +206,7 @@ public class Controller {
                         float activityY = Float.parseFloat(activityElement.getElementsByTagName("ActivityY").item(0).getTextContent());
                         schedule.add(new Activity(activityX, activityY));
                     }
-                    buildingNew.addPerson(new Person(x,y,color,schedule));
+                    buildingNew.addPerson(new Person(name, x,y,color,schedule));
                 }
             }
 
@@ -227,10 +241,14 @@ public class Controller {
         return person;
     }
 
-    public static Person addPersonWithSchedule(float x, float y, Color colour, ArrayList<Activity> schedule){
-        Person person = new Person(x,y,colour, schedule);
+    public static Person addPersonWithSchedule(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
+        Person person = new Person(name, x,y,colour, schedule);
         building.addPerson(person);
         return person;
+    }
+
+    public static void upsertPerson(Person person){
+        building.upsertPerson(person);
     }
 
     public static void createNewBuilding(File file){
@@ -247,5 +265,7 @@ public class Controller {
         if(currentFile != null) return true;
         else return false;
     }
+
+
 
 }

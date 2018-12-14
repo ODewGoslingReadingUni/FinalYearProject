@@ -1,5 +1,7 @@
 package com.company;
 
+import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 
 public class Building {
@@ -38,6 +40,24 @@ public class Building {
         people.add(new Person(x,y));
     }
 
+    public void updatePerson(String id, float x, float y, ArrayList<Activity> schedule, Color colour){
+        Person personToUpdate = searchForPersonById(id);
+        personToUpdate.setPosition(x,y);
+        personToUpdate.setSchedule(schedule);
+        personToUpdate.setColour(colour);
+    }
+
+    public void upsertPerson(Person person){
+        if(searchForPersonById(person.getId()) != null){
+            //Person already exists
+            updatePerson(person.getId(), person.getX(), person.getY(), person.getSchedule(), person.getColour());
+        }
+        else{
+            //Person does not already exist
+            addPerson(person);
+        }
+    }
+
     public void iterate(float timePeriod){
         for(Person p:people){
             p.move(this, timePeriod);
@@ -48,20 +68,13 @@ public class Building {
         return !checkForCollisionWithWall(x, y);
     }
 
-    public static ArrayList<Wall> getMockWalls(){
-        ArrayList<Wall> mock = new ArrayList<Wall>();
-        mock.add(new Wall(20,150, 50, 50));
-        mock.add(new Wall(20,20, 50, 200));
-        mock.add(new Wall(150, 150,50,200));
-        mock.add(new Wall(20,150,200,200));
-        return mock;
+    public Person searchForPersonById(String id){
+        for(Person p: people){
+            if(p.getId().equals(id)){
+                return p;
+            }
+        }
+        return null;
     }
-
-    public static ArrayList<Person> getMockPeople(){
-        ArrayList<Person> people = new ArrayList<Person>();
-        people.add(new Person(100,100));
-        return people;
-    }
-
 
 }

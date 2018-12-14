@@ -4,34 +4,68 @@ import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 
 public class Person {
     private float x;
     private float y;
-    private final int RADIUS = 5;
+    private final int RADIUS = 8;
     private Color colour;
-
     private ArrayList<Activity> activities;
+    private String id;
+    private String name;
+
+    //These variables are only used internally
     private int activityCount;
     private ArrayList<Coordinate> path;
     private float pathStage;
 
-    public Person(float x, float y){
-        this.x = x;
-        this.y = y;
+    //Constructors----------------------------------------------------------------------------
 
+    public Person(){
+        id = UUID.randomUUID().toString();
+
+        //Initialise array
+        this.activities = new ArrayList<>();
+        name = "default name";
+
+        //Setting internal variables to defaults
         activityCount = 0;
-        activities = new ArrayList<Activity>();
         path = new ArrayList<>();
         pathStage = 0;
     }
 
-    public Person(float x, float y, Color colour, ArrayList<Activity> schedule){
+    public Person(float x, float y){
+        id = UUID.randomUUID().toString();
+
+        this.x = x;
+        this.y = y;
+        colour = Color.GREEN;
+        activities = new ArrayList<Activity>();
+        name = "default name";
+
+        //Setting internal variables to defaults
+        activityCount = 0;
+        path = new ArrayList<>();
+        pathStage = 0;
+    }
+
+    public Person(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
+        id = UUID.randomUUID().toString();
+
         this.x = x;
         this.y = y;
         this.colour = colour;
         this.activities = schedule;
+        this.name = name;
+
+        //Setting internal variables to defaults
+        activityCount = 0;
+        path = new ArrayList<>();
+        pathStage = 0;
     }
+
+    //Getters and setters-----------------------------------------------------------------------
 
     public float getX(){
         return x;
@@ -41,12 +75,38 @@ public class Person {
         return y;
     }
 
+    public void setPosition(float x, float y){
+        this.x = x;
+        this.y = y;
+    }
+
     public int getRadius(){
         return RADIUS;
     }
 
     public Color getColour(){
         return colour;
+    }
+
+    public void setColour(Color colour){
+        this.colour = colour;
+    }
+
+    public ArrayList<Activity> getSchedule(){
+        return activities;
+    }
+
+    public Activity getCurrentActivity(){
+        if(activities.size() > 0) return activities.get(activityCount);
+        else return new Activity(x,y);
+    }
+
+    public String getName(){
+        return name;
+    }
+
+    public String getId(){
+        return id;
     }
 
     public void addActivity(int x, int y){
@@ -61,14 +121,11 @@ public class Person {
         activities = schedule;
     }
 
-    public ArrayList<Activity> getSchedule(){
-        return activities;
+    public void setName(String name){
+        this.name = name;
     }
 
-    public Activity getCurrentActivity(){
-        if(activities.size() > 0) return activities.get(activityCount);
-        else return new Activity(x,y);
-    }
+    //Pathfinding and Movement------------------------------------------------------------------
 
     public void move(Building building, float timePeriod){
         //Set up initial path only
