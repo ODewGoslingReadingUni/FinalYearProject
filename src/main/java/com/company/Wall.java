@@ -1,6 +1,7 @@
 package com.company;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class Wall {
     private float x1;
@@ -9,11 +10,23 @@ public class Wall {
     private float x2;
     private float y2;
 
-    public Wall(float x1, float x2, float y1, float y2){
-        this.x1 = x1;
-        this.x2 = x2;
-        this.y1 = y1;
-        this.y2 = y2;
+    private float width;
+    private float height;
+
+    private String id;
+
+
+    public Wall(float x, float y, float width, float height){
+        this.x1 = x;
+        this.y1 = y;
+        this.width = width;
+        this.height = height;
+
+        //Automatically set legacy variables for compatibility
+        this.x2 = x1 + width;
+        this.y2 = y1 + height;
+
+        id = UUID.randomUUID().toString();
     }
 
     public float getX1(){
@@ -32,14 +45,18 @@ public class Wall {
         return y2;
     }
 
-    public void setPoint1(int x, int y){
+    public void setPoint1(float x, float y){
         x1 = x;
         y1 = y;
+        width = Math.abs(x1 - x2);
+        height = Math.abs(y1 - y2);
     }
 
-    public void setPoint2(int x, int y){
+    public void setPoint2(float x, float y){
         x2 = x;
         y2 = y;
+        width = Math.abs(x1 - x2);
+        height = Math.abs(y1 - y2);
     }
 
     public ArrayList<Coordinate> getCollisionBox() {
@@ -55,10 +72,29 @@ public class Wall {
     }
 
     public float getWidth(){
-        return Math.abs(x1-x2);
+        return width;
     }
 
     public float getHeight(){
-        return Math.abs(y1-y2);
+        return height;
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    public void setWidth(float width){
+        this.width = width;
+        x2 = x1 + width;
+    }
+
+    public void setHeight(float height){
+        this.height = height;
+        y2 = y1 + height;
+    }
+
+    public boolean isHorizontal(){
+        if(width > height) return true;
+        else return false;
     }
 }

@@ -19,7 +19,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -29,8 +29,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.paint.Color;
+import javafx.stage.WindowEvent;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -54,7 +56,7 @@ public class UserInterface extends Application {
     @Override
     public void start(Stage stage) {
 
-        Controller.doInitialSetup();
+        Controller.doInitialSetup(this);
         rootStage = stage;
 
         editMode = new SimpleBooleanProperty(false);
@@ -103,6 +105,21 @@ public class UserInterface extends Application {
         Pane pane = new Pane();
         pane.setPrefWidth(canvas.getWidth());
         pane.setPrefHeight(canvas.getHeight());
+
+        ContextMenuEdit contextMenuEdit = new ContextMenuEdit(pane);
+        //ContextMenu contextMenu = contextMenuEdit.getContextMenu();
+
+        pane.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
+            @Override
+            public void handle(ContextMenuEvent event) {
+                contextMenuEdit.contextMenuRequest(event.getScreenX(), event.getScreenY(), event.getX(), event.getY());
+            }
+        });
+
+        pane.setOnMouseClicked(mouseEvent -> {
+            contextMenuEdit.hideMenu();
+        });
+
         return pane;
     }
 
@@ -164,16 +181,36 @@ public class UserInterface extends Application {
         Menu fileMenu = createMenu("File", fileMenuItems);
         menuBar.getMenus().add(fileMenu);
 
+        MenuItem addWallItem = new MenuItem("Add new wall");
+        addWallItem.setOnAction(actionEvent -> {
+            createEditWallMenu(null);
+        });
+
         MenuItem addPersonItem = new MenuItem("Add new person");
         addPersonItem.setOnAction(actionEvent -> {
             createEditPersonMenu(null);
         });
 
+        MenuItem addRoomItem = new MenuItem("Add new room");
+        addRoomItem.setOnAction(actionEvent -> {
+            createEditRoomMenu(null);
+        });
+
         ArrayList<MenuItem> editMenuItems = new ArrayList<>();
+        editMenuItems.add(addWallItem);
         editMenuItems.add(addPersonItem);
+        editMenuItems.add(addRoomItem);
 
         Menu editMenu = createMenu("Edit", editMenuItems);
         menuBar.getMenus().add(editMenu);
+
+        MenuItem viewReportsItem = new MenuItem("Building Use Report");
+
+        ArrayList<MenuItem> reportingMenuItems = new ArrayList<>();
+        reportingMenuItems.add(viewReportsItem);
+
+        Menu reportingMenu = createMenu("Reporting", reportingMenuItems);
+        menuBar.getMenus().add(reportingMenu);
 
         return menuBar;
     }
@@ -242,14 +279,24 @@ public class UserInterface extends Application {
         gc.fillRect(0, 0, WIDTH, HEIGHT);
 
         //Draw building and people
+        drawFloors(gc, Controller.getRoomInfo());
         drawPeople(gc, Controller.getPeopleLocations());
         drawWalls(gc, Controller.getWallLocations());
+        drawDoors(gc, Controller.getDoorLocations());
     }
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
         for(Person p: people){
             gc.setFill(p.getColour());
-            gc.fillOval(p.getX(), p.getY(), p.getRadius(), p.getRadius());
+            gc.fillOval(p.getX() - p.getRadius()/2, p.getY() - p.getRadius()/2, p.getRadius(), p.getRadius());
+        }
+    }
+
+    private void drawDoors(GraphicsContext gc, ArrayList<Doorway> doors){
+        gc.setFill(Color.BROWN);
+        gc.setLineWidth(3);
+        for(Doorway d: doors){
+            gc.fillRect(d.getX(),d.getY(),d.getWidth(),d.getHeight());
         }
     }
 
@@ -262,6 +309,15 @@ public class UserInterface extends Application {
             float width = Math.abs(w.getX1() - w.getX2());
             float height = Math.abs(w.getY1() - w.getY2());
             gc.fillRect(w.getX1(), w.getY1(), width, height);
+        }
+    }
+
+    private void drawFloors(GraphicsContext gc, ArrayList<Room> roomLocations){
+        for(Room r: roomLocations){
+            gc.setFill(r.getFloorColour());
+            gc.setStroke(r.getFloorColour());
+            gc.setLineWidth(1);
+            gc.fillRect(r.getX()+0.5, r.getY()+0.5, r.getWidth(), r.getHeight());
         }
     }
 
@@ -302,7 +358,7 @@ public class UserInterface extends Application {
         addWallButton.visibleProperty().bind(Bindings.createBooleanBinding( () -> editMode.get(), editMode));
         addWallButton.managedProperty().bind(Bindings.createBooleanBinding( () -> editMode.get(), editMode));
         addWallButton.setOnAction(actionEvent -> {
-            createAddWallMenu();
+            createEditWallMenu(null);
         });
         return addWallButton;
     }
@@ -317,85 +373,61 @@ public class UserInterface extends Application {
         return button;
     }
 
-    private Stage createAddWallMenu(){
+    private Stage createEditWallMenu(Wall wall){
 
-        Stage editStage = new Stage();
-        editStage.initOwner(rootStage);
-        editStage.setWidth(256);
-        editStage.setHeight(256);
-        editStage.setTitle("New Wall");
+        startEditing();
 
-        VBox mainVbox = new VBox();
-        TextField xPositionField = addTextInputFieldToParent(mainVbox, "x:");
-        TextField yPositionField = addTextInputFieldToParent(mainVbox, "y:");
-        TextField lengthField = addTextInputFieldToParent(mainVbox, "Length:");
-
-        ObservableList<String> options = FXCollections.observableArrayList("Horizontal", "Vertical");
-        ComboBox comboBox = new ComboBox(options);
-        mainVbox.getChildren().add(comboBox);
-        comboBox.getSelectionModel().select(0);
-
-        Button addButton = new Button("Add");
-        addButton.setOnAction(actionEvent -> {
-            Controller.addWallAtLocation(
-                    Float.parseFloat(xPositionField.getText()),
-                    Float.parseFloat(yPositionField.getText()),
-                    Float.parseFloat(lengthField.getText()),
-                    comboBox.getValue().toString());
-
-            updateEditPane();
-        });
-
-        mainVbox.getChildren().add(addButton);
-
-        Scene scene = new Scene(mainVbox);
-        editStage.setScene(scene);
-        editStage.show();
+        EditWallMenu editWallMenu = new EditWallMenu(wall);
+        Stage editStage = editWallMenu.getEditWallStage();
 
         return editStage;
+    }
 
+    private Stage createEditWallMenu(float x, float y){
+        startEditing();
+
+        EditWallMenu editWallMenu = new EditWallMenu(x,y);
+        Stage editStage = editWallMenu.getEditWallStage();
+        editStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                updateEditPane();
+            }
+        });
+
+        return editStage;
+    }
+
+    private Stage createEditPersonMenu(float x, float y){
+        startEditing();
+
+        EditPersonMenu editPersonMenu = new EditPersonMenu(x,y);
+        Stage editStage = editPersonMenu.getEditPersonStage();
+        editStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                updateEditPane();
+            }
+        });
+
+        return editStage;
     }
 
     private Stage createEditPersonMenu(Person person){
 
         startEditing();
 
-        Stage editStage = new Stage();
-        editStage.initOwner(rootStage);
-        editStage.setWidth(800);
-        editStage.setHeight(400);
-        if(person != null) editStage.setTitle(person.getName());
-        else editStage.setTitle("New Person");
+        EditPersonMenu editPersonMenu = new EditPersonMenu(person);
+        Stage editStage = editPersonMenu.getEditPersonStage();
 
-        VBox vbox = new VBox();
-        vbox.setPadding(new Insets(10, 10, 10, 10));
-        vbox.setSpacing(5);
+        return editStage;
+    }
 
-        TextField textFieldName = addTextInputFieldToParent(vbox, "name: ");
-        TextField textFieldX = addTextInputFieldToParent(vbox, "x: ");
-        TextField textFieldY = addTextInputFieldToParent(vbox, "y: ");
-        ColorPicker cp = addColorPickerToParent(vbox, "Dot Colour: ");
+    private Stage createEditRoomMenu(Room room){
+        startEditing();
 
-        EditableTableFX table = new EditableTableFX(vbox, "Schedule");
-
-        Button addActivityButton = new Button("Add Activity");
-        addActivityButton.setOnAction(actionEvent -> {
-            table.addNewRow();
-        });
-
-        Button addPersonButton = new Button("Save");
-        addPersonButton.setOnAction(actionEvent -> {
-            Controller.upsertPerson(new Person(textFieldName.getText(), Float.parseFloat(textFieldX.getText()), Float.parseFloat(textFieldY.getText()), cp.getValue(), table.getData()));
-            updateEditPane();
-            editStage.close();
-        });
-
-        vbox.getChildren().add(addActivityButton);
-        vbox.getChildren().add(addPersonButton);
-
-        Scene scene = new Scene(vbox);
-        editStage.setScene(scene);
-        editStage.show();
+        EditRoomMenu editRoomMenu = new EditRoomMenu(room);
+        Stage editStage = editRoomMenu.getEditRoomStage();
 
         return editStage;
     }
@@ -411,7 +443,7 @@ public class UserInterface extends Application {
         return tf;
     }
 
-    private ComboBox addComboBoxToParent(Pane parent, String name, ObservableList options){
+    public static ComboBox addComboBoxToParent(Pane parent, String name, ObservableList options){
         Label label = new Label(name);
         HBox hbox = new HBox();
 
@@ -426,7 +458,7 @@ public class UserInterface extends Application {
         return comboBox;
     }
 
-    private CheckBox addCheckBoxToParent(Pane parent, String name, boolean checked){
+    public static CheckBox addCheckBoxToParent(Pane parent, String name, boolean checked){
         HBox hbox = new HBox();
 
         CheckBox checkBox = new CheckBox(name);
@@ -439,10 +471,11 @@ public class UserInterface extends Application {
         return checkBox;
     }
 
-    private ColorPicker addColorPickerToParent(Pane parent, String name){
+    public static ColorPicker addColorPickerToParent(Pane parent, String name){
         HBox hbox = new HBox();
 
         ColorPicker cp = new ColorPicker();
+        cp.setValue(Color.RED);
         Label label = new Label(name);
 
         hbox.getChildren().add(label);
@@ -454,12 +487,33 @@ public class UserInterface extends Application {
         return cp;
     }
 
-    private void updateEditPane(){
+    void updateEditPane(){
         editPane.getChildren().clear();
+
+        ArrayList<Room> rooms = Controller.getRoomInfo();
+        for(Room r:rooms){
+            Rectangle rect = new Rectangle(r.getX()+0.5, r.getY()+0.5, r.getWidth(), r.getHeight());
+            rect.setFill(r.getFloorColour());
+            rect.setStroke(r.getFloorColour());
+            editPane.getChildren().add(rect);
+        }
 
         ArrayList<Wall> walls = Controller.getWallLocations();
         for(Wall w: walls) {
             Rectangle rect = new Rectangle(w.getX1(), w.getY1(), w.getWidth(), w.getHeight());
+            rect.setOnMousePressed(mouseEvent ->{
+                if(mouseEvent.isPrimaryButtonDown()){
+                    //Get x and y coordinates of point
+                    double x = rect.getX();
+                    double y = rect.getY();
+
+                    //Look for the corresponding person who is at that location
+                    Wall wallToEdit  = Controller.searchForWall((float)x,(float)y);
+
+                    //Open menu to edit the wall
+                    createEditWallMenu(wallToEdit);
+                }
+            });
             rect.setCursor(Cursor.HAND);
             editPane.getChildren().add(rect);
         }
@@ -467,6 +521,18 @@ public class UserInterface extends Application {
         ArrayList<Person> people = Controller.getPeopleLocations();
         for(Person p: people){
             Circle circle = new Circle(p.getX(), p.getY(), p.getRadius()/2, p.getColour());
+            circle.setOnMouseClicked( mouseEvent -> {
+                //Get x and y coordinates of point
+                double x = circle.getCenterX();
+                double y = circle.getCenterY();
+
+                //Look for the corresponding wall that is at that location
+                Person personToEdit  = Controller.searchForPerson((float)x,(float)y);
+
+                //Open the edit pane
+                createEditPersonMenu(personToEdit);
+
+            });
             circle.setCursor(Cursor.HAND);
             editPane.getChildren().add(circle);
         }
@@ -520,6 +586,22 @@ public class UserInterface extends Application {
             return false;
         }
         else return false;
+    }
+
+    private ContextMenu createContextMenu(){
+        ContextMenu contextMenu = new ContextMenu();
+
+        MenuItem addWallItem = new MenuItem("Add New Wall");
+        addWallItem.setOnAction(actionEvent -> {
+            createEditWallMenu(null);
+        });
+
+        MenuItem addPersonItem = new MenuItem("Add New Person");
+
+        contextMenu.getItems().add(addWallItem);
+        contextMenu.getItems().add(addPersonItem);
+
+        return contextMenu;
     }
 
 }

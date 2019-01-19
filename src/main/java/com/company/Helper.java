@@ -28,6 +28,7 @@ public class Helper {
 
     public static float getFloatFromTextField(TextField field){
         String text = field.getText();
+        if(text.length() == 0) return 0; //Return something if the field is left blank
         float floatValue = Float.parseFloat(text);
         return floatValue;
     }

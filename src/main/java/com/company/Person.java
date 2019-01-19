@@ -9,7 +9,7 @@ import java.util.UUID;
 public class Person {
     private float x;
     private float y;
-    private final int RADIUS = 8;
+    private final int RADIUS = 6;
     private Color colour;
     private ArrayList<Activity> activities;
     private String id;

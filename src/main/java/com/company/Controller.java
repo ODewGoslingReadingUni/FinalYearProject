@@ -19,22 +19,43 @@ public class Controller {
 
     private static Building building;
     private static float timer;
-    private static final float WALL_WIDTH = 5;
+    private static final float WALL_WIDTH = 4;
     private static File currentFile;
+    private static UserInterface activeUI;
     public static Person tempPerson;
 
-    public static void doInitialSetup(){
+    public static void doInitialSetup(UserInterface ui){
         building = new Building();
         timer = 0;
         tempPerson = new Person(0,0);
+        activeUI = ui;
     }
 
     public static ArrayList<Wall> getWallLocations(){
-        return building.getWalls();
+        ArrayList<Wall> walls = new ArrayList<>();
+        walls.addAll(building.getWalls());
+
+        for(Room r: building.getRooms()){
+            walls.addAll(r.getWalls());
+            System.out.println("Number of walls: " + r.getWalls().size());
+        }
+
+        System.out.println("Total number of walls: " + walls.size());
+
+
+        return walls;
     }
 
     public static ArrayList<Person> getPeopleLocations(){
         return building.getPeople();
+    }
+
+    public static ArrayList<Room> getRoomInfo(){
+        return building.getRooms();
+    }
+
+    public static ArrayList<Doorway> getDoorLocations(){
+        return building.getDoors();
     }
 
     public static void doIteration(float speed){
@@ -179,7 +200,11 @@ public class Controller {
                     float x2 = Float.parseFloat(current.getElementsByTagName("x2").item(0).getTextContent());
                     float y1 = Float.parseFloat(current.getElementsByTagName("y1").item(0).getTextContent());
                     float y2 = Float.parseFloat(current.getElementsByTagName("y2").item(0).getTextContent());
-                    buildingNew.addWall(new Wall(x1,x2,y1,y2));
+
+                    float width = Math.abs(x1 - x2);
+                    float height = Math.abs(y1 - y2);
+
+                    buildingNew.addWall(new Wall(x1,y1,width, height));
                 }
                 else{
                     System.out.println("Could not read file successfully");
@@ -222,7 +247,7 @@ public class Controller {
     }
 
     public static void addWallAtLocation(float x, float y, float width, float height){
-        Wall wall = new Wall(x,x+width, y, y+height);
+        Wall wall = new Wall(x, y, width, height);
         building.addWall(wall);
     }
 
@@ -233,6 +258,25 @@ public class Controller {
         else{
             addWallAtLocation(x,y,WALL_WIDTH, length);
         }
+    }
+
+    public static void addDoorAtLocation(float x, float y, boolean horizontal){
+        String wallId = building.checkForCollisionWithWall(x,y);
+
+        if(wallId != null){
+            Wall w = building.searchForWallById(wallId);
+            boolean isHorizontal = w.isHorizontal();
+            if(isHorizontal){
+                y = w.getY1();
+            } else {
+                x = w.getX1();
+            }
+            Doorway door = new Doorway(x,y,isHorizontal);
+            building.addDoor(door);
+        } else{
+            System.out.println("Cannot add door, point is not on a wall");
+        }
+
     }
 
     public Person addPersonAt(float x, float y){
@@ -266,6 +310,27 @@ public class Controller {
         else return false;
     }
 
+    public static Person searchForPerson(float x, float y){
+        return building.searchForPersonByXY(x,y);
+    }
 
+    public static Wall searchForWall(float x, float y){
+        return building.searchForWallByXY(x,y);
+    }
 
+    public static void deletePerson(String id){
+        building.deletePerson(id);
+    }
+
+    public static void editWall(Wall wall){
+        building.upsertWall(wall);
+    }
+
+    public static void upsertRoom(Room room){
+        building.upsertRoom(room);
+    }
+
+    public static void doUIUpdate(){
+        activeUI.updateEditPane();
+    }
 }
