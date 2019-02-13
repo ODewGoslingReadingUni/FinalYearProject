@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -20,7 +21,7 @@ public class EditRoomMenu {
     }
 
     public EditRoomMenu(float x, float y){
-        room = new Room(x,y,50,50, "Office", true);
+        room = new Room(x,y,50,50, "Office", true, "");
     }
 
     public Stage getEditRoomStage(){
@@ -43,7 +44,8 @@ public class EditRoomMenu {
         TextField y = UserInterface.addTextInputFieldToParent(vbox, "y: ");
         TextField width = UserInterface.addTextInputFieldToParent(vbox, "Width: ");
         TextField height = UserInterface.addTextInputFieldToParent(vbox, "Height: ");
-        CheckBox hasWalls = UserInterface.addCheckBoxToParent(vbox, "Has Walls: ", true);
+        //CheckBox hasWalls;
+       // if(room == null) hasWalls = UserInterface.addCheckBoxToParent(vbox, "Has Walls: ",true);
 
         //Input the room details(if the room exists)
         if(room != null){
@@ -68,7 +70,7 @@ public class EditRoomMenu {
                         Helper.getFloatFromTextField(width),
                         Helper.getFloatFromTextField(height),
                         roomType.getValue().toString(),
-                        hasWalls.isSelected());
+                        name.getText());
 
                 Controller.upsertRoom(room);
                 Controller.doUIUpdate();
@@ -80,7 +82,8 @@ public class EditRoomMenu {
                         Helper.getFloatFromTextField(width),
                         Helper.getFloatFromTextField(height),
                         roomType.getValue().toString(),
-                        hasWalls.isSelected());
+                        true,
+                        name.getText());
 
                 Controller.upsertRoom(roomNew);
                 Controller.doUIUpdate();
@@ -88,7 +91,23 @@ public class EditRoomMenu {
             }
         });
 
-        vbox.getChildren().add(saveButton);
+        Button deleteButton = new Button("Delete");
+        deleteButton.setOnAction(actionEvent -> {
+            Controller.deleteRoom(room.getId());
+            editStage.close();
+        });
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(actionEvent -> {
+            editStage.close();
+        });
+
+        HBox formattingBox = new HBox();
+        formattingBox.setSpacing(10);
+        formattingBox.getChildren().add(saveButton);
+        formattingBox.getChildren().add(cancelButton);
+        formattingBox.getChildren().add(deleteButton);
+        vbox.getChildren().add(formattingBox);
 
         Scene scene = new Scene(vbox);
         editStage.setScene(scene);

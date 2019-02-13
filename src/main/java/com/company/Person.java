@@ -1,24 +1,28 @@
 package com.company;
 
 import javafx.scene.paint.Color;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
-public class Person {
-    private float x;
-    private float y;
-    private final int RADIUS = 6;
+public class Person extends AbstractObject{
+
+    private Entrance entrance;
+    private final int RADIUS = 8;
     private Color colour;
     private ArrayList<Activity> activities;
-    private String id;
     private String name;
+    private ArrayList<PersonData> data;
 
     //These variables are only used internally
     private int activityCount;
     private ArrayList<Coordinate> path;
     private float pathStage;
+    private Activity currentActivity;
+    private boolean dayFinished;
 
     //Constructors----------------------------------------------------------------------------
 
@@ -48,6 +52,8 @@ public class Person {
         activityCount = 0;
         path = new ArrayList<>();
         pathStage = 0;
+        data = new ArrayList<>();
+        dayFinished = false;
     }
 
     public Person(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
@@ -60,9 +66,16 @@ public class Person {
         this.name = name;
 
         //Setting internal variables to defaults
-        activityCount = 0;
         path = new ArrayList<>();
+        data = new ArrayList<>();
         pathStage = 0;
+        activityCount = 0;
+        if(activities != null) {
+            if(activities.size() > 0)currentActivity = activities.get(activityCount);
+            else currentActivity = null;
+        }
+        else currentActivity = null;
+        dayFinished = false;
     }
 
     //Getters and setters-----------------------------------------------------------------------
@@ -96,9 +109,30 @@ public class Person {
         return activities;
     }
 
-    public Activity getCurrentActivity(){
-        if(activities.size() > 0) return activities.get(activityCount);
-        else return new Activity(x,y);
+    public Activity getCurrentActivity(Building building){
+        if(currentActivity == null) return null;
+        if(dayFinished) return currentActivity;
+
+        if(activityCount + 1 >= activities.size()){
+            //No more activities left- leave the building
+            currentActivity = new Activity(Controller.getHour() + 1, entrance.getX(), entrance.getY());
+            path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
+            pathStage = 0;
+            dayFinished = true;
+            return currentActivity;
+        } else {
+            if(Controller.getHour() < activities.get(activityCount + 1).getTime()){
+                //We are already on the correct activity
+                return currentActivity;
+            } else {
+                //Get the next activity
+                activityCount++;
+                currentActivity = activities.get(activityCount);
+                path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
+                pathStage = 0;
+                return currentActivity;
+            }
+        }
     }
 
     public String getName(){
@@ -109,9 +143,9 @@ public class Person {
         return id;
     }
 
-    public void addActivity(int x, int y){
+    /*public void addActivity(int x, int y){
         activities.add(new Activity(x,y));
-    }
+    }*/
 
     public void addActivity(Activity activity){
         activities.add(activity);
@@ -119,39 +153,122 @@ public class Person {
 
     public void setSchedule(ArrayList<Activity> schedule){
         activities = schedule;
+        if(activities != null) currentActivity = activities.get(0);
     }
 
     public void setName(String name){
         this.name = name;
     }
 
+    public Element getXML(Document doc){
+        Element personElement = doc.createElement("Person");
+
+        Element nameElement = doc.createElement("name");
+        nameElement.setTextContent(getName());
+        personElement.appendChild(nameElement);
+
+        Element x1Element = doc.createElement("x");
+        x1Element.setTextContent("" + getX());
+        personElement.appendChild(x1Element);
+
+        Element y1Element = doc.createElement("y");
+        y1Element.setTextContent("" + getY());
+        personElement.appendChild(y1Element);
+
+        Element colourElement = doc.createElement("Colour");
+        colourElement.setTextContent(Helper.colorToRGBCode(getColour()));
+        personElement.appendChild(colourElement);
+        //System.out.println("" + Helper.colorToRGBCode(p.getColour()));
+
+        Element scheduleElement = doc.createElement("Schedule");
+
+        for(Activity a: getSchedule()){
+            Element activityElement = doc.createElement("Activity");
+            Element activityXElement = doc.createElement("ActivityX");
+            Element activityYElement = doc.createElement("ActivityY");
+
+            activityXElement.setTextContent("" + a.getX());
+            activityYElement.setTextContent("" + a.getY());
+            activityElement.appendChild(activityXElement);
+            activityElement.appendChild(activityYElement);
+
+            scheduleElement.appendChild(activityElement);
+        }
+
+        personElement.appendChild(scheduleElement);
+        return personElement;
+    }
+
+    public void recordPersonData(PersonData personData){
+        data.add(personData);
+    }
+
+    public ArrayList<PersonData> getPersonData() {
+        return data;
+    }
+
+    public ArrayList<CategoricData> generateRoomUsageReport(){
+        ArrayList<CategoricData> types = new ArrayList<>();
+        boolean exists = false;
+
+        for(PersonData pd: data){
+            for(CategoricData cd: types){
+                if(pd.getRoomType().equals(cd.category)){
+                    cd.occurances++;
+                    exists = true;
+                    break;
+                }
+            }
+
+            if(!exists){
+                types.add(new CategoricData(pd.getRoomType()));
+            }
+            exists = false;
+        }
+
+        return types;
+    }
+
+    public void setEntrance(Entrance entrance) {
+        this.entrance = entrance;
+    }
+
+    public void resetToStartOfDay()
+    {
+        dayFinished = false;
+
+        //Reset activities
+        pathStage = 0;
+        activityCount = 0;
+        if(activities != null) {
+            if(activities.size() > 0)currentActivity = activities.get(activityCount);
+            else currentActivity = null;
+        }
+        else currentActivity = null;
+    }
+
     //Pathfinding and Movement------------------------------------------------------------------
 
     public void move(Building building, float timePeriod){
+        //Get target coordinates
+        if(currentActivity == null) return;
+        Activity a = getCurrentActivity(building);
+        float targetX = a.getX();
+        float targetY = a.getY();
+
         //Set up initial path only
-        if(activities.size() > 0 && path.size() == 0) path = findPath(building,x,y,getCurrentActivity().getX(), getCurrentActivity().getY());
+        if(activities.size() > 0 && path.size() == 0) path = findPath(building,x,y,targetX, targetY);
 
         final float INCREMENT = 4;
 
-        //Move if there's a path to follow
-        if(path.size() > 1 && pathStage < path.size()){
+        //Move if there's a path to follow and we are not at the target
+        if(path.size() > 1 && pathStage < path.size() && !atTargetPosition(building)){
             Coordinate next = path.get((int)Math.floor(pathStage));
             if(next.x > x) x += INCREMENT / timePeriod;
             if(next.y > y) y += INCREMENT / timePeriod;
             if(next.x < x) x -= INCREMENT / timePeriod;
             if(next.y < y) y -= INCREMENT / timePeriod;
             pathStage += 1/timePeriod;
-        } else if(pathStage >= path.size()){
-            goToNextActivity(building);
-        }
-
-        //Get target coordinates
-        Activity a = getCurrentActivity();
-        float targetX = a.getX();
-        float targetY = a.getY();
-
-        if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
-            goToNextActivity(building);
         }
     }
 
@@ -264,7 +381,19 @@ public class Person {
         if(activityCount < activities.size() - 1) activityCount++;
         else activityCount = 0;
 
-        path = findPath(building,x,y,getCurrentActivity().getX(), getCurrentActivity().getY());
+        path = findPath(building,x,y,getCurrentActivity(building).getX(), getCurrentActivity(building).getY());
         pathStage = 0;
     }
+
+    private boolean atTargetPosition(Building building){
+        Activity a = getCurrentActivity(building);
+        float targetX = a.getX();
+        float targetY = a.getY();
+
+        if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
+            return true;
+        }
+        else return false;
+    }
+
 }

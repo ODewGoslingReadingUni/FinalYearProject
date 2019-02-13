@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -28,6 +29,7 @@ public class EditWallMenu {
         editStage.setHeight(256);
 
         VBox mainVbox = new VBox();
+        mainVbox.setSpacing(5);
         TextField xPositionField = UserInterface.addTextInputFieldToParent(mainVbox, "x:");
         TextField yPositionField = UserInterface.addTextInputFieldToParent(mainVbox, "y:");
         TextField lengthField = UserInterface.addTextInputFieldToParent(mainVbox, "Length:");
@@ -38,8 +40,8 @@ public class EditWallMenu {
 
         //Fill fields for an existing record
         if(wall != null){
-            xPositionField.setText(""+ wall.getX1());
-            yPositionField.setText("" + wall.getY1());
+            xPositionField.setText(""+ wall.getX());
+            yPositionField.setText("" + wall.getY());
 
             float width = wall.getWidth();
             float height = wall.getHeight();
@@ -70,10 +72,10 @@ public class EditWallMenu {
                 wall.setPoint1(Helper.getFloatFromTextField(xPositionField), Helper.getFloatFromTextField(yPositionField));
                 if(comboBox.getValue().toString().equals("Horizontal")) {
                     wall.setWidth(Helper.getFloatFromTextField(lengthField));
-                    wall.setHeight(5);
+                    wall.setHeight(UserInterface.WALL_THICKNESS);
                 }else{
                     wall.setHeight(Helper.getFloatFromTextField(lengthField));
-                    wall.setWidth(5);
+                    wall.setWidth(UserInterface.WALL_THICKNESS);
                 }
                 Controller.editWall(wall);
             }
@@ -81,7 +83,29 @@ public class EditWallMenu {
             editStage.close();
         });
 
-        mainVbox.getChildren().add(addButton);
+        Button deleteButton = new Button("Delete");
+        deleteButton.setOnAction(actionEvent -> {
+            if(wall.getId() != null){
+                Controller.deleteWall(wall.getId());
+                editStage.close();
+            }
+            else {
+                editStage.close();
+            }
+        });
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(actionEvent -> {
+            editStage.close();
+        });
+
+        HBox formattingBox = new HBox();
+        formattingBox.setSpacing(10);
+        formattingBox.getChildren().add(addButton);
+        formattingBox.getChildren().add(cancelButton);
+        if(wall != null) formattingBox.getChildren().add(deleteButton);
+
+        mainVbox.getChildren().add(formattingBox);
 
         Scene scene = new Scene(mainVbox);
         editStage.setScene(scene);

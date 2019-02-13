@@ -1,44 +1,31 @@
 package com.company;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class Wall {
-    private float x1;
-    private float y1;
-
+public class Wall extends AbstractObject {
     private float x2;
     private float y2;
 
-    private float width;
-    private float height;
-
-    private String id;
-
-
     public Wall(float x, float y, float width, float height){
-        this.x1 = x;
-        this.y1 = y;
+
+        this.x = x;
+        this.y = y;
         this.width = width;
         this.height = height;
 
         //Automatically set legacy variables for compatibility
-        this.x2 = x1 + width;
-        this.y2 = y1 + height;
+        this.x2 = this.x + width;
+        this.y2 = this.y + height;
 
         id = UUID.randomUUID().toString();
     }
 
-    public float getX1(){
-        return x1;
-    }
-
     public float getX2(){
         return x2;
-    }
-
-    public float getY1(){
-        return y1;
     }
 
     public float getY2(){
@@ -46,29 +33,24 @@ public class Wall {
     }
 
     public void setPoint1(float x, float y){
-        x1 = x;
-        y1 = y;
-        width = Math.abs(x1 - x2);
-        height = Math.abs(y1 - y2);
+        this.x = x;
+        this.y = y;
+        x2 = this.x + width;
+        y2 = this.y + height;
     }
 
     public void setPoint2(float x, float y){
         x2 = x;
         y2 = y;
-        width = Math.abs(x1 - x2);
-        height = Math.abs(y1 - y2);
+        width = Math.abs(this.x - x2);
+        height = Math.abs(this.y - y2);
     }
 
     public ArrayList<Coordinate> getCollisionBox() {
         ArrayList<Coordinate> coordinates = new ArrayList<>();
-        coordinates.add(new Coordinate(x1, y1));
+        coordinates.add(new Coordinate(x, y));
         coordinates.add(new Coordinate(x2, y2));
         return coordinates;
-    }
-
-    public boolean testForCollision(float x, float y){
-        if(x > x1 && x < x2 && y > y1 && y < y2) return true;
-        else return false;
     }
 
     public float getWidth(){
@@ -83,18 +65,26 @@ public class Wall {
         return id;
     }
 
-    public void setWidth(float width){
-        this.width = width;
-        x2 = x1 + width;
-    }
+    @Override
+    public Element getXML(Document doc, String tagName){
+        Element wallElement = doc.createElement(tagName);
 
-    public void setHeight(float height){
-        this.height = height;
-        y2 = y1 + height;
-    }
+        Element x1Element = doc.createElement("x");
+        x1Element.setTextContent("" + x);
+        wallElement.appendChild(x1Element);
 
-    public boolean isHorizontal(){
-        if(width > height) return true;
-        else return false;
+        Element x2Element = doc.createElement("x2");
+        x2Element.setTextContent("" + x2);
+        wallElement.appendChild(x2Element);
+
+        Element y1Element = doc.createElement("y");
+        y1Element.setTextContent("" + y);
+        wallElement.appendChild(y1Element);
+
+        Element y2Element = doc.createElement("y2");
+        y2Element.setTextContent("" + y2);
+        wallElement.appendChild(y2Element);
+
+        return wallElement;
     }
 }

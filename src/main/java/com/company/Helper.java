@@ -29,7 +29,12 @@ public class Helper {
     public static float getFloatFromTextField(TextField field){
         String text = field.getText();
         if(text.length() == 0) return 0; //Return something if the field is left blank
-        float floatValue = Float.parseFloat(text);
+        float floatValue;
+        try{
+            floatValue = Float.parseFloat(text);
+        } catch (NumberFormatException exception){
+            return 0;
+        }
         return floatValue;
     }
 
@@ -38,5 +43,25 @@ public class Helper {
                 (int)( color.getRed() * 255 ),
                 (int)( color.getGreen() * 255 ),
                 (int)( color.getBlue() * 255 ) );
+    }
+
+    public static String validStringInput(TextField textField){
+        if(textField.getText().length() < 0) return "";
+        else return textField.getText();
+    }
+
+    public static float alignObject(float num, float multiple){
+        float remainder = num % multiple;
+        if(remainder == 0){
+            return num;
+        }
+        else{
+            if(remainder < multiple/2){
+                return num - remainder;
+            }
+            else{
+                return (num - remainder) + multiple;
+            }
+        }
     }
 }

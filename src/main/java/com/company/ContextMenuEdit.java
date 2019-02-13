@@ -25,25 +25,31 @@ public class ContextMenuEdit {
 
         MenuItem addPersonItem = new MenuItem("Add New Person");
         addPersonItem.setOnAction(actionEvent -> {
-            EditPersonMenu editPersonMenu = new EditPersonMenu((float)x, (float)y);
+            EditPersonMenu editPersonMenu = new EditPersonMenu(null);
             editPersonMenu.getEditPersonStage().show();
         });
 
         MenuItem addRoomItem = new MenuItem("Add New Room");
         addRoomItem.setOnAction(actionEvent -> {
-            EditRoomMenu editRoomMenu = new EditRoomMenu((float)x, (float)y);
+            EditRoomMenu editRoomMenu = new EditRoomMenu(Helper.alignObject((float)x, 6),Helper.alignObject((float)y, 6));
             editRoomMenu.getEditRoomStage().show();
         });
 
         MenuItem addDoorItem = new MenuItem("Add Door");
         addDoorItem.setOnAction(actionEvent -> {
-            Controller.addDoorAtLocation((float)x,(float)y,true);
+            Controller.addDoorAtLocation((float)x,(float)y, "door");
+        });
+
+        MenuItem addEntranceItem = new MenuItem("Add Entrance");
+        addEntranceItem.setOnAction(actionEvent -> {
+            Controller.addDoorAtLocation((float)x, (float)y, "Entrance");
         });
 
         contextMenu.getItems().add(addDoorItem);
         contextMenu.getItems().add(addWallItem);
         contextMenu.getItems().add(addPersonItem);
         contextMenu.getItems().add(addRoomItem);
+        contextMenu.getItems().add(addEntranceItem);
     }
 
     public void contextMenuRequest(double x, double y, double wallX, double wallY){

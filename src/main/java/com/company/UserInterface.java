@@ -5,11 +5,10 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -23,7 +22,6 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
@@ -32,7 +30,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.WindowEvent;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -53,6 +50,8 @@ public class UserInterface extends Application {
     public static StringProperty editButtonProperty;
     public static StringProperty playButtonProperty;
 
+    public static final float WALL_THICKNESS = 6;
+
     @Override
     public void start(Stage stage) {
 
@@ -60,7 +59,7 @@ public class UserInterface extends Application {
         rootStage = stage;
 
         editMode = new SimpleBooleanProperty(false);
-        animationSpeed = new SimpleFloatProperty((float)15);
+        animationSpeed = new SimpleFloatProperty((float)5);
         editButtonProperty = new SimpleStringProperty("Edit");
         playButtonProperty = new SimpleStringProperty("Pause");
 
@@ -96,6 +95,8 @@ public class UserInterface extends Application {
         return borderPane;
     }
 
+    //Create UI components
+
     private Canvas createCanvas(){
         canvas = new Canvas(WIDTH,HEIGHT);
         return canvas;
@@ -130,9 +131,9 @@ public class UserInterface extends Application {
         Button pauseButton = createPauseButton();
         Button fastForwardButton = createFastForwardButton();
 
-        toolBar.getItems().add(slowDownButton);
+        //toolBar.getItems().add(slowDownButton);
         toolBar.getItems().add(pauseButton);
-        toolBar.getItems().add(fastForwardButton);
+        //toolBar.getItems().add(fastForwardButton);
 
         toolBar.getItems().add(createEditButton());
         toolBar.getItems().add(createNewPersonButton());
@@ -247,112 +248,6 @@ public class UserInterface extends Application {
         return button;
     }
 
-    //Animation timer that allows drawing of graphics
-    private AnimationTimer createAnimationTimer(GraphicsContext gc){
-        AnimationTimer timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if(playAnimation == true) {
-                    Controller.doIteration(animationSpeed.get());
-                    draw(gc);
-                }
-            }
-        };
-        return timer;
-    }
-
-    private void pauseAnimation(){
-        playAnimation = false;
-        playButtonProperty.setValue("Play");
-    }
-
-    private void resumeAnimation(){
-        playAnimation = true;
-        playButtonProperty.setValue("Pause");
-        finishEditing();
-    }
-
-    //Drawing the graphics to the graphics context.
-    private void draw(GraphicsContext gc){
-        //Clear canvas
-        gc.setFill(Color.WHITE);
-        gc.fillRect(0, 0, WIDTH, HEIGHT);
-
-        //Draw building and people
-        drawFloors(gc, Controller.getRoomInfo());
-        drawPeople(gc, Controller.getPeopleLocations());
-        drawWalls(gc, Controller.getWallLocations());
-        drawDoors(gc, Controller.getDoorLocations());
-    }
-
-    private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
-        for(Person p: people){
-            gc.setFill(p.getColour());
-            gc.fillOval(p.getX() - p.getRadius()/2, p.getY() - p.getRadius()/2, p.getRadius(), p.getRadius());
-        }
-    }
-
-    private void drawDoors(GraphicsContext gc, ArrayList<Doorway> doors){
-        gc.setFill(Color.BROWN);
-        gc.setLineWidth(3);
-        for(Doorway d: doors){
-            gc.fillRect(d.getX(),d.getY(),d.getWidth(),d.getHeight());
-        }
-    }
-
-    private void drawWalls(GraphicsContext gc, ArrayList<Wall> wallLocations){
-        gc.setLineWidth(3);
-        gc.setStroke(Color.BLACK);
-        gc.setFill(Color.BLACK);
-
-        for(Wall w:wallLocations){
-            float width = Math.abs(w.getX1() - w.getX2());
-            float height = Math.abs(w.getY1() - w.getY2());
-            gc.fillRect(w.getX1(), w.getY1(), width, height);
-        }
-    }
-
-    private void drawFloors(GraphicsContext gc, ArrayList<Room> roomLocations){
-        for(Room r: roomLocations){
-            gc.setFill(r.getFloorColour());
-            gc.setStroke(r.getFloorColour());
-            gc.setLineWidth(1);
-            gc.fillRect(r.getX()+0.5, r.getY()+0.5, r.getWidth(), r.getHeight());
-        }
-    }
-
-    private Menu createMenu(String name, ArrayList<MenuItem> menuItems){
-        Menu menu = new Menu(name);
-        menu.getItems().addAll(menuItems);
-        return menu;
-    }
-
-    private Button createEditButton(){
-        Button button = new Button("Edit");
-        button.textProperty().bind(Bindings.createStringBinding( () -> editButtonProperty.get(), editButtonProperty));
-        button.setOnAction( actionEvent -> {
-            if(editMode.get()) finishEditing();
-            else startEditing();
-        });
-        return button;
-    }
-
-    private void startEditing(){
-        pauseAnimation();
-        editButtonProperty.setValue("Stop Editing");
-        editMode.set(true);
-
-        root.setCenter(editPane);
-
-        updateEditPane();
-    }
-
-    private void finishEditing(){
-        editButtonProperty.setValue("Edit");
-        editMode.set(false);
-        root.setCenter(canvas);
-    }
-
     private Button createNewWallButton(){
         Button addWallButton = new Button("New Wall");
         addWallButton.visibleProperty().bind(Bindings.createBooleanBinding( () -> editMode.get(), editMode));
@@ -432,6 +327,134 @@ public class UserInterface extends Application {
         return editStage;
     }
 
+    private Stage createEditDoorMenu(Door door){
+        startEditing();
+
+        EditDoorMenu editDoorMenu = new EditDoorMenu(door);
+        Stage editStage = editDoorMenu.getEditDoorStage();
+
+        return editStage;
+    }
+
+    private Stage createEditEntranceMenu(Entrance entrance){
+        EditEntranceMenu editEntranceMenu = new EditEntranceMenu(entrance);
+
+        return editEntranceMenu.getEditEntranceStage();
+    }
+
+    private Menu createMenu(String name, ArrayList<MenuItem> menuItems){
+        Menu menu = new Menu(name);
+        menu.getItems().addAll(menuItems);
+        return menu;
+    }
+
+    private Button createEditButton(){
+        Button button = new Button("Edit");
+        button.textProperty().bind(Bindings.createStringBinding( () -> editButtonProperty.get(), editButtonProperty));
+        button.setOnAction( actionEvent -> {
+            if(editMode.get()) finishEditing();
+            else startEditing();
+        });
+        return button;
+    }
+
+    //Animation methods
+
+    private AnimationTimer createAnimationTimer(GraphicsContext gc){
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if(playAnimation == true) {
+                    Controller.doIteration(animationSpeed.get());
+                    draw(gc);
+                }
+            }
+        };
+        return timer;
+    }
+
+    private void pauseAnimation(){
+        playAnimation = false;
+        playButtonProperty.setValue("Play");
+    }
+
+    private void resumeAnimation(){
+        playAnimation = true;
+        playButtonProperty.setValue("Pause");
+        finishEditing();
+    }
+
+    private void draw(GraphicsContext gc){
+        //Clear canvas
+        gc.setFill(Color.WHITE);
+        gc.fillRect(0, 0, WIDTH, HEIGHT);
+
+        //Draw building and people
+        drawFloors(gc, Controller.getRoomInfo());
+        drawPeople(gc, Controller.getPeopleLocations());
+        drawWalls(gc, Controller.getWallLocations());
+        drawDoors(gc, Controller.getDoorLocations());
+    }
+
+    private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
+        for(Person p: people){
+            gc.setFill(p.getColour());
+            gc.fillOval(p.getX() - p.getRadius()/2, p.getY() - p.getRadius()/2, p.getRadius(), p.getRadius());
+        }
+    }
+
+    private void drawDoors(GraphicsContext gc, ArrayList<Door> doors){
+
+        gc.setLineWidth(3);
+        for(Door d: doors){
+            if(d.getDoorType().equals("Entrance")) gc.setFill(Color.GRAY);
+            else gc.setFill(Color.BROWN);
+            gc.fillRect(d.getX(),d.getY(),d.getWidth(),d.getHeight());
+        }
+    }
+
+    private void drawWalls(GraphicsContext gc, ArrayList<Wall> wallLocations){
+        gc.setLineWidth(3);
+        gc.setStroke(Color.BLACK);
+        gc.setFill(Color.BLACK);
+
+        for(Wall w:wallLocations){
+            float width = Math.abs(w.getX() - w.getX2());
+            float height = Math.abs(w.getY() - w.getY2());
+            gc.fillRect(w.getX(), w.getY(), width, height);
+        }
+    }
+
+    private void drawFloors(GraphicsContext gc, ArrayList<Room> roomLocations){
+        for(Room r: roomLocations){
+            gc.setFill(r.getFloorColour());
+            gc.setStroke(r.getFloorColour());
+            gc.setLineWidth(1);
+            gc.fillRect(r.getX()+0.5, r.getY()+0.5, r.getWidth(), r.getHeight());
+        }
+    }
+
+    //Methods to change application state
+
+    private void startEditing(){
+        pauseAnimation();
+        editButtonProperty.setValue("Stop Editing");
+        editMode.set(true);
+
+        root.setCenter(editPane);
+
+        updateEditPane();
+    }
+
+    private void finishEditing(){
+        editButtonProperty.setValue("Edit");
+        editMode.set(false);
+        root.setCenter(canvas);
+        draw(canvas.getGraphicsContext2D());
+    }
+
+    //Static methods
+
     public static TextField addTextInputFieldToParent(Pane parent, String name){
         HBox hbox = new HBox();
         TextField tf = new TextField();
@@ -494,21 +517,26 @@ public class UserInterface extends Application {
         for(Room r:rooms){
             Rectangle rect = new Rectangle(r.getX()+0.5, r.getY()+0.5, r.getWidth(), r.getHeight());
             rect.setFill(r.getFloorColour());
+            rect.setId(r.getId());
+            rect.setCursor(Cursor.HAND);
             rect.setStroke(r.getFloorColour());
+            rect.setOnMousePressed(mouseEvent -> {
+                if(mouseEvent.isPrimaryButtonDown()){
+                    Room roomToEdit = Controller.searchForRoom(rect.getId());
+                    createEditRoomMenu(roomToEdit);
+                }
+            });
             editPane.getChildren().add(rect);
         }
 
         ArrayList<Wall> walls = Controller.getWallLocations();
         for(Wall w: walls) {
-            Rectangle rect = new Rectangle(w.getX1(), w.getY1(), w.getWidth(), w.getHeight());
+            Rectangle rect = new Rectangle(w.getX(), w.getY(), w.getWidth(), w.getHeight());
+            rect.setId(w.getId());
             rect.setOnMousePressed(mouseEvent ->{
                 if(mouseEvent.isPrimaryButtonDown()){
-                    //Get x and y coordinates of point
-                    double x = rect.getX();
-                    double y = rect.getY();
-
-                    //Look for the corresponding person who is at that location
-                    Wall wallToEdit  = Controller.searchForWall((float)x,(float)y);
+                    //Look for the right wall
+                    Wall wallToEdit  = Controller.searchForWall(rect.getId());
 
                     //Open menu to edit the wall
                     createEditWallMenu(wallToEdit);
@@ -518,16 +546,36 @@ public class UserInterface extends Application {
             editPane.getChildren().add(rect);
         }
 
+        ArrayList<Door> doors = Controller.getDoorLocations();
+        for(Door d: doors){
+            Rectangle rect = new Rectangle(d.getX(), d.getY(), d.getWidth(), d.getHeight());
+            if(d.getDoorType().equals("Entrance")){
+                rect.setFill(Color.GRAY);
+            }
+            else {
+                rect.setFill(Color.BROWN);
+            }
+            rect.setStrokeWidth(0);
+            rect.setId(d.getId());
+            rect.setCursor(Cursor.HAND);
+            rect.setOnMouseClicked(mouseEvent -> {
+                Door doorToEdit = Controller.searchForDoor(rect.getId());
+                if(doorToEdit.getDoorType().equals("Entrance")){
+                    createEditEntranceMenu((Entrance)doorToEdit);
+                }else{
+                    createEditDoorMenu(doorToEdit);
+                }
+            });
+            editPane.getChildren().add(rect);
+        }
+
         ArrayList<Person> people = Controller.getPeopleLocations();
         for(Person p: people){
             Circle circle = new Circle(p.getX(), p.getY(), p.getRadius()/2, p.getColour());
+            circle.setId(p.getId());
             circle.setOnMouseClicked( mouseEvent -> {
-                //Get x and y coordinates of point
-                double x = circle.getCenterX();
-                double y = circle.getCenterY();
-
-                //Look for the corresponding wall that is at that location
-                Person personToEdit  = Controller.searchForPerson((float)x,(float)y);
+                //Get the person record
+                Person personToEdit  = Controller.searchForPerson(circle.getId());
 
                 //Open the edit pane
                 createEditPersonMenu(personToEdit);
@@ -537,6 +585,8 @@ public class UserInterface extends Application {
             editPane.getChildren().add(circle);
         }
     }
+
+    //File stuff
 
     private void openFile(){
         FileChooser fileChooser = new FileChooser();
@@ -570,6 +620,8 @@ public class UserInterface extends Application {
        }
     }
 
+    //Showing alerts or dialogs
+
     private boolean showAlert(){
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Save current file before starting a new file?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
         alert.setTitle("Save current file?");
@@ -602,6 +654,14 @@ public class UserInterface extends Application {
         contextMenu.getItems().add(addPersonItem);
 
         return contextMenu;
+    }
+
+    public static void displayErrorDialog(){
+
+    }
+
+    public static void displayInlineErrorMessage(String message, Node parent){
+
     }
 
 }

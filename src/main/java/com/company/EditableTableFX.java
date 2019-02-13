@@ -1,7 +1,9 @@
 package com.company;
 
-import javafx.geometry.Insets;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -10,25 +12,26 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class EditableTableFX {
 
     private ArrayList<ActivityFX> table;
     private VBox root;
-    private VBox tableRows;
+    private VBox tableVbox;
     private Pane parent;
 
     public EditableTableFX(Pane parent, String title){
         table = new ArrayList<ActivityFX>();
 
         root = new VBox();
-        tableRows = new VBox();
-        tableRows.setSpacing(5);
+        tableVbox = new VBox();
+        tableVbox.setSpacing(5);
         Label titleLabel = new Label(title);
         titleLabel.setUnderline(true);
         titleLabel.setFont(new Font(14));
         root.getChildren().add(titleLabel);
-        root.getChildren().add(tableRows);
+        root.getChildren().add(tableVbox);
 
         parent.getChildren().add(root);
         this.parent = parent;
@@ -38,13 +41,13 @@ public class EditableTableFX {
         table = new ArrayList<ActivityFX>();
 
         root = new VBox();
-        tableRows = new VBox();
-        tableRows.setSpacing(5);
+        tableVbox = new VBox();
+        tableVbox.setSpacing(5);
         Label titleLabel = new Label(title);
         titleLabel.setUnderline(true);
         titleLabel.setFont(new Font(14));
         root.getChildren().add(titleLabel);
-        root.getChildren().add(tableRows);
+        root.getChildren().add(tableVbox);
 
         parent.getChildren().add(root);
         this.parent = parent;
@@ -52,17 +55,28 @@ public class EditableTableFX {
         //Add existing data to the table
         table = new ArrayList<ActivityFX>();
         for(Activity a: content){
-            table.add(new ActivityFX(parent, a));
+            ActivityFX activityToAdd = new ActivityFX(tableVbox, a);
+            table.add(activityToAdd);
+            activityToAdd.setIndex(table.size() -1);
         }
     }
 
 
     public void addNewRow(){
-        table.add(new ActivityFX(tableRows));
+        ActivityFX activityFX = new ActivityFX(tableVbox);
+        table.add(activityFX);
+        activityFX.setIndex(table.size()-1);
     }
 
-    public void deleteRow(int index){
-        tableRows.getChildren().remove(index);
+    /*public void addNewRow(int time, Activity activity){
+        ActivityFX activityFX = new ActivityFX(tableVbox);
+        table.add(activityFX);
+        activityFX.setIndex(table.size()-1);
+    }*/
+
+
+    public void deleteRow(ActivityFX activityFX){
+        tableVbox.getChildren().remove(activityFX);
     }
 
     public ArrayList<ActivityFX> getTable(){
@@ -74,6 +88,7 @@ public class EditableTableFX {
         for(ActivityFX a: table){
             activities.add(a.getActivity());
         }
+        activities.sort(Comparator.comparingInt(Activity::getTime));
         return activities;
     }
 
@@ -81,58 +96,64 @@ public class EditableTableFX {
     private class ActivityFX {
 
         private HBox root;
-        private TextField xTextField;
-        private TextField yTextField;
         private int index;
 
-        private ActivityFX(Pane parent){
+        private ComboBox location;
+        private ComboBox time;
+
+        private ActivityFX(){
             root = new HBox();
             root.setSpacing(5);
 
-            xTextField = UserInterface.addTextInputFieldToParent(root, "x:");
-            yTextField = UserInterface.addTextInputFieldToParent(root, "y:");
+            ArrayList<Number> times = new ArrayList<>();
+            for(int i = 9; i < 18; i++){
+                times.add(i);
+            }
 
-            if(table.size() > 0) index = table.size() - 1;
+            ArrayList<String> locations = new ArrayList<>();
+            for(Room r: Controller.getRoomInfo()){
+                locations.add(r.getName());
+            }
+
+            ObservableList<Number> timeOptions = FXCollections.observableList(times);
+            time = UserInterface.addComboBoxToParent(root, "Time: ", timeOptions);
+            ObservableList<String> locationOptions = FXCollections.observableList(locations);
+            location = UserInterface.addComboBoxToParent(root, "Location: ", locationOptions);
 
             Button btn = new Button("Delete activity");
             btn.setOnAction(actionEvent -> {
-                deleteRow(index);
+                deleteRow(this);
             });
-
             root.getChildren().add(btn);
+        }
 
+
+        private ActivityFX(Pane parent){
+            this();
             parent.getChildren().add(root);
         }
 
         private ActivityFX(Pane parent, Activity activity){
-            root = new HBox();
-            root.setSpacing(5);
-
-            xTextField = UserInterface.addTextInputFieldToParent(root, "x:");
-            yTextField = UserInterface.addTextInputFieldToParent(root, "y:");
-
-            xTextField.setText("" + activity.getX());
-            yTextField.setText("" + activity.getY());
-
-            if(table.size() > 0) index = table.size() - 1;
-
-            Button btn = new Button("Delete activity");
-            btn.setOnAction(actionEvent -> {
-                deleteRow(index);
-            });
-
-            root.getChildren().add(btn);
-
+            this();
             parent.getChildren().add(root);
+
+            time.setValue(activity.getTime());
+            location.setValue(activity.getLocation().getName());
         }
 
         private Activity getActivity(){
-            Activity activity = new Activity(Helper.getFloatFromTextField(xTextField), Helper.getFloatFromTextField(yTextField));
+            Room r = Controller.searchForRoomByName(location.getValue().toString());
+            int t = Integer.parseInt(time.getValue().toString());
+            Activity activity = new Activity(t,r);
             return activity;
         }
 
         private HBox getRoot(){
             return root;
+        }
+
+        private void setIndex(int value){
+            index = value;
         }
     }
 
