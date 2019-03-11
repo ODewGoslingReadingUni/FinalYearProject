@@ -57,7 +57,6 @@ public class EditableTableFX {
         for(Activity a: content){
             ActivityFX activityToAdd = new ActivityFX(tableVbox, a);
             table.add(activityToAdd);
-            activityToAdd.setIndex(table.size() -1);
         }
     }
 
@@ -65,18 +64,24 @@ public class EditableTableFX {
     public void addNewRow(){
         ActivityFX activityFX = new ActivityFX(tableVbox);
         table.add(activityFX);
-        activityFX.setIndex(table.size()-1);
     }
 
-    /*public void addNewRow(int time, Activity activity){
-        ActivityFX activityFX = new ActivityFX(tableVbox);
-        table.add(activityFX);
-        activityFX.setIndex(table.size()-1);
-    }*/
+    private void clearAllRows(){
+        table.clear();
+        tableVbox.getChildren().clear();
+    }
 
+    public void setAllRows(ArrayList<Activity> activities){
+        clearAllRows();
+        table = new ArrayList<ActivityFX>();
+        for(Activity a: activities){
+            ActivityFX activityToAdd = new ActivityFX(tableVbox, a);
+            table.add(activityToAdd);
+        }
+    }
 
     public void deleteRow(ActivityFX activityFX){
-        tableVbox.getChildren().remove(activityFX);
+        tableVbox.getChildren().remove(activityFX.getRoot());
     }
 
     public ArrayList<ActivityFX> getTable(){

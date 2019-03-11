@@ -66,6 +66,11 @@ public class EditPersonMenu {
             table.addNewRow();
         });
 
+        Button addRandomScheduleButton = new Button("Random Schedule");
+        addRandomScheduleButton.setOnAction(actionEvent -> {
+            table.setAllRows(Person.generateRandomSchedule());
+        });
+
         Button addPersonButton = new Button("Save");
         addPersonButton.setOnAction(actionEvent -> {
             //Set the person's data
@@ -102,6 +107,7 @@ public class EditPersonMenu {
         });
 
         vbox.getChildren().add(addActivityButton);
+        vbox.getChildren().add(addRandomScheduleButton);
 
         Button cancelButton = new Button("Cancel");
         cancelButton.setOnAction(actionEvent -> {

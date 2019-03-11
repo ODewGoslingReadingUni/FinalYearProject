@@ -6,6 +6,7 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 import java.util.UUID;
 
 public class Person extends AbstractObject{
@@ -143,12 +144,33 @@ public class Person extends AbstractObject{
         return id;
     }
 
-    /*public void addActivity(int x, int y){
-        activities.add(new Activity(x,y));
-    }*/
-
     public void addActivity(Activity activity){
         activities.add(activity);
+    }
+
+    private static Activity generateRandomActivity(){
+        Random random = new Random();
+        int timeNum = random.nextInt(8) + 9;
+        int roomNum = random.nextInt(Controller.getRoomInfo().size() - 1);
+        Activity activity = new Activity(timeNum, Controller.getRoomInfo().get(roomNum));
+        return activity;
+    }
+
+    public static ArrayList<Activity> generateRandomSchedule(){
+        Random rnd = new Random();
+        int numberOfActivities = 2 + rnd.nextInt(6);
+        ArrayList schedule = new ArrayList<Activity>();
+
+        for(int i = 0; i < numberOfActivities; i++){
+            schedule.add(generateRandomActivity());
+        }
+
+        return schedule;
+    }
+
+    public void setRandomSchedule(){
+        activities.clear();
+        activities.addAll(generateRandomSchedule());
     }
 
     public void setSchedule(ArrayList<Activity> schedule){
@@ -395,5 +417,6 @@ public class Person extends AbstractObject{
         }
         else return false;
     }
+
 
 }

@@ -96,7 +96,6 @@ public class UserInterface extends Application {
     }
 
     //Create UI components
-
     private Canvas createCanvas(){
         canvas = new Canvas(WIDTH,HEIGHT);
         return canvas;

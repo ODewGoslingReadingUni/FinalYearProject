@@ -1,5 +1,6 @@
 package com.company;
 
+import java.util.Random;
 import java.util.UUID;
 
 public class Activity {
@@ -10,8 +11,7 @@ public class Activity {
     private int time;
 
     public Activity(int time, Room location){
-        this();
-
+        id = UUID.randomUUID().toString();
         this.time = time;
         this.room = location;
 
@@ -21,8 +21,7 @@ public class Activity {
     }
 
     public Activity(int time, float x, float y){
-        this();
-
+        id = UUID.randomUUID().toString();
         this.time = time;
         this.x = x;
         this.y = y;
