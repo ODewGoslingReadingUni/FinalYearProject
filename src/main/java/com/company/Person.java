@@ -25,6 +25,11 @@ public class Person extends AbstractObject{
     private Activity currentActivity;
     private boolean dayFinished;
 
+    private int toiletNeed;
+    private final int toiletMax = 500;
+    private int hunger;
+    private final int hungerMax = 2000;
+
     //Constructors----------------------------------------------------------------------------
 
     public Person(){
@@ -35,30 +40,25 @@ public class Person extends AbstractObject{
         name = "default name";
 
         //Setting internal variables to defaults
+        hunger = 0;
+        toiletNeed = 0;
         activityCount = 0;
-        path = new ArrayList<>();
         pathStage = 0;
-    }
-
-    public Person(float x, float y){
-        id = UUID.randomUUID().toString();
-
-        this.x = x;
-        this.y = y;
-        colour = Color.GREEN;
-        activities = new ArrayList<Activity>();
-        name = "default name";
-
-        //Setting internal variables to defaults
-        activityCount = 0;
         path = new ArrayList<>();
-        pathStage = 0;
         data = new ArrayList<>();
         dayFinished = false;
     }
 
+    public Person(float x, float y){
+        this();
+
+        this.x = x;
+        this.y = y;
+        colour = Color.GREEN;
+    }
+
     public Person(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
-        id = UUID.randomUUID().toString();
+        this();
 
         this.x = x;
         this.y = y;
@@ -66,17 +66,11 @@ public class Person extends AbstractObject{
         this.activities = schedule;
         this.name = name;
 
-        //Setting internal variables to defaults
-        path = new ArrayList<>();
-        data = new ArrayList<>();
-        pathStage = 0;
-        activityCount = 0;
         if(activities != null) {
             if(activities.size() > 0)currentActivity = activities.get(activityCount);
             else currentActivity = null;
         }
         else currentActivity = null;
-        dayFinished = false;
     }
 
     //Getters and setters-----------------------------------------------------------------------
@@ -114,24 +108,41 @@ public class Person extends AbstractObject{
         if(currentActivity == null) return null;
         if(dayFinished) return currentActivity;
 
-        if(activityCount + 1 >= activities.size()){
-            //No more activities left- leave the building
-            currentActivity = new Activity(Controller.getHour() + 1, entrance.getX(), entrance.getY());
-            path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
-            pathStage = 0;
-            dayFinished = true;
+        if(toiletNeed >= toiletMax){
+            //If the person needs the toilet, go to toilet
+            if(Controller.searchForRoomByPoint(getX(),getY()).getType().equals("Toilet")) {
+                toiletNeed = 0;
+            }
+
+            if(currentActivity.getLocation().getType().equals("Toilet") == false){
+                pathStage = 0;
+                Room nearestToilet = building.searchForNearestToilet(getX(), getY());
+                currentActivity = new Activity(Controller.getHour(), nearestToilet);
+                path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
+                return currentActivity;
+            }
             return currentActivity;
         } else {
-            if(Controller.getHour() < activities.get(activityCount + 1).getTime()){
-                //We are already on the correct activity
-                return currentActivity;
-            } else {
-                //Get the next activity
-                activityCount++;
-                currentActivity = activities.get(activityCount);
+            //If they don't need the toilet, follow timetable
+            if(activityCount + 1 >= activities.size()){
+                //No more activities left- leave the building
+                currentActivity = new Activity(Controller.getHour() + 1, entrance.getX(), entrance.getY());
                 path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
                 pathStage = 0;
+                dayFinished = true;
                 return currentActivity;
+            } else {
+                if(Controller.getHour() < activities.get(activityCount + 1).getTime()){
+                    //We are already on the correct activity
+                    return currentActivity;
+                } else {
+                    //Get the next activity
+                    activityCount++;
+                    currentActivity = activities.get(activityCount);
+                    path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
+                    pathStage = 0;
+                    return currentActivity;
+                }
             }
         }
     }
@@ -175,7 +186,9 @@ public class Person extends AbstractObject{
 
     public void setSchedule(ArrayList<Activity> schedule){
         activities = schedule;
-        if(activities != null) currentActivity = activities.get(0);
+        if(activities != null) {
+            if(activities.size() > 0) currentActivity = activities.get(0);
+        }
     }
 
     public void setName(String name){
@@ -271,6 +284,12 @@ public class Person extends AbstractObject{
 
     //Pathfinding and Movement------------------------------------------------------------------
 
+    public void iterate(Building building, float timePeriod){
+        move(building,timePeriod);
+        toiletNeed++;
+        hunger++;
+    }
+
     public void move(Building building, float timePeriod){
         //Get target coordinates
         if(currentActivity == null) return;
@@ -280,6 +299,8 @@ public class Person extends AbstractObject{
 
         //Set up initial path only
         if(activities.size() > 0 && path.size() == 0) path = findPath(building,x,y,targetX, targetY);
+
+        if(path.size() == 0) return;
 
         final float INCREMENT = 4;
 
@@ -311,15 +332,13 @@ public class Person extends AbstractObject{
             int currentIndex = 0;
             Coordinate currentNode = openList.get(currentIndex);
 
-            //System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
-
-            for(Coordinate c: openList){
-                //System.out.println("open list " + counter +" x: " + c.x + " y: " + c.y + " f: " + c.f);
-            }
             counter ++;
-            if(counter > 1000){
+            if(counter > 3000){
                 System.out.println("Open List Size: " + openList.size());
+                //If there is no possible path
+                return null;
             }
+
 
             for(int i = 0; i < openList.size(); i++){
                 if(openList.get(i).f < currentNode.f){
@@ -330,7 +349,7 @@ public class Person extends AbstractObject{
 
             System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
 
-            openList.remove(currentIndex);
+            openList.remove(currentNode);
             closedList.add(currentNode);
 
             //Checking if we have reached the target
@@ -396,15 +415,7 @@ public class Person extends AbstractObject{
             }
         }
         //If coordinate is not already in the list
-        list.add(c);
-    }
-
-    private void goToNextActivity(Building building){
-        if(activityCount < activities.size() - 1) activityCount++;
-        else activityCount = 0;
-
-        path = findPath(building,x,y,getCurrentActivity(building).getX(), getCurrentActivity(building).getY());
-        pathStage = 0;
+       list.add(c);
     }
 
     private boolean atTargetPosition(Building building){

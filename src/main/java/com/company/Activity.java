@@ -25,6 +25,7 @@ public class Activity {
         this.time = time;
         this.x = x;
         this.y = y;
+        this.room = Controller.searchForRoomByPoint(x,y);
     }
 
 

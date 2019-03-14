@@ -227,7 +227,7 @@ public class Building {
 
     public void iterate(float timePeriod){
         for(Person p:people){
-            p.move(this, timePeriod);
+            p.iterate(this, timePeriod);
         }
         gatherData();
     }
@@ -243,7 +243,6 @@ public class Building {
         //If neither of the above conditions are true, it's not traversable.
         return false;
     }
-
 
     //Searching Methods
 
@@ -298,6 +297,37 @@ public class Building {
         return null;
     }
 
+    public boolean hasToilet(){
+        for(Room r: rooms){
+            if(r.getType().equals("Toilet")) return true;
+        }
+        return false;
+    }
+
+    public Room searchForNearestToilet(float x, float y){
+        if(!hasToilet()) return null;
+
+        float shortestDistance = 999999999;
+        Room shortestRoom = null;
+
+        for(Room r:rooms){
+            if(r.getType().equals("Toilet")){
+                float dist = Helper.distance(x,y,r.getX(), r.getY());
+                if(dist < shortestDistance){
+                    shortestDistance = dist;
+                    shortestRoom = r;
+                }
+            }
+        }
+        return shortestRoom;
+    }
+
+    public Room searchForRoomByPoint(float x, float y){
+        for(Room r: rooms){
+            if(r.pointIsInRoom(x,y)) return r;
+        }
+        return null;
+    }
 
     //Deleting methods
 

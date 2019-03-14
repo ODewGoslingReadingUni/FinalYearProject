@@ -77,7 +77,7 @@ public class Controller {
         float timePeriod = 60/speed;
         building.iterate(timePeriod);
         System.out.println("Hour: " + Controller.getHour() + " Minutes: " + time.getMinute());
-        time = time.plusSeconds(1);
+        time = time.plusSeconds(10);
         tick++;
     }
 
@@ -385,6 +385,10 @@ public class Controller {
 
     public static Door searchForDoor(String id){
         return building.searchForDoorById(id);
+    }
+
+    public static Room searchForRoomByPoint(float x, float y){
+        return building.searchForRoomByPoint(x,y);
     }
 
     //Delete methods

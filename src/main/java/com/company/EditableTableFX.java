@@ -82,6 +82,7 @@ public class EditableTableFX {
 
     public void deleteRow(ActivityFX activityFX){
         tableVbox.getChildren().remove(activityFX.getRoot());
+        table.remove(activityFX);
     }
 
     public ArrayList<ActivityFX> getTable(){
