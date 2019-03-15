@@ -53,7 +53,7 @@ public class EditableTableFX {
         this.parent = parent;
 
         //Add existing data to the table
-        table = new ArrayList<ActivityFX>();
+        table = new ArrayList<>();
         for(Activity a: content){
             ActivityFX activityToAdd = new ActivityFX(tableVbox, a);
             table.add(activityToAdd);
@@ -73,7 +73,7 @@ public class EditableTableFX {
 
     public void setAllRows(ArrayList<Activity> activities){
         clearAllRows();
-        table = new ArrayList<ActivityFX>();
+        table = new ArrayList<>();
         for(Activity a: activities){
             ActivityFX activityToAdd = new ActivityFX(tableVbox, a);
             table.add(activityToAdd);

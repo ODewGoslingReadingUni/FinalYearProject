@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -147,26 +148,22 @@ public class EditPersonMenu {
     }
 
     private void showPersonReport(String id){
-        ArrayList<CategoricData> data = Controller.searchForPerson(id).generateRoomUsageReport();
-        NumberAxis xAxis = new NumberAxis();
-        xAxis.setLabel("Time Spent");
-        xAxis.setTickLabelRotation(90);
-        CategoryAxis yAxis = new CategoryAxis();
-        yAxis.setLabel("Room Type");
+        //Create charts of data to view
+        ArrayList<CategoricData> data = Controller.searchForPerson(id).generateRoomTypeReport();
+        XYChart roomTypeChart =  UIHelper.makeCategoricReport(data, "Time Spent", "Room Type", "Time ");
 
-        BarChart<Number, String> barChart = new BarChart<Number, String>(xAxis, yAxis);
-        XYChart.Series series = new XYChart.Series();
-        series.setName("Room Usage");
-        for(CategoricData cd: data){
-            series.getData().add(new XYChart.Data(cd.occurances,cd.category));
-        }
+        ArrayList<CategoricData> roomNameData = Controller.searchForPerson(id).generateRoomNameReport();
+        XYChart roomNameChart = UIHelper.makeCategoricReport(roomNameData, "Time Spent", "Room Name", "Time");
 
-        barChart.getData().add(series);
+        //Add charts to grid pane
+        GridPane gridPane = new GridPane();
+        gridPane.add(roomTypeChart, 0,0);
+        gridPane.add(roomNameChart,1,0);
 
+        //Create stage/scene
         Stage reportStage = new Stage();
-        reportStage.setTitle("Report");
-
-        Scene reportScene = new Scene(barChart, 400,400);
+        reportStage.setTitle("Person Report");
+        Scene reportScene = new Scene(gridPane, 400,400);
         reportStage.setScene(reportScene);
 
         reportStage.show();

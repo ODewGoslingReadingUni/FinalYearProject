@@ -177,29 +177,6 @@ public class Controller {
                 }
             }
 
-            NodeList personNodeList = doc.getElementsByTagName("Person");
-
-            for(int i = 0; i < personNodeList.getLength(); i++){
-                if(personNodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
-                    Element current = (Element)personNodeList.item(i);
-                    String name = current.getElementsByTagName("name").item(0).getTextContent();
-                    float x = Float.parseFloat(current.getElementsByTagName("x").item(0).getTextContent());
-                    float y = Float.parseFloat(current.getElementsByTagName("y").item(0).getTextContent());
-                    Color color = Color.web(current.getElementsByTagName("Colour").item(0).getTextContent());
-
-                    ArrayList<Activity> schedule = new ArrayList<>();
-                    Element scheduleElement = (Element) current.getElementsByTagName("Schedule").item(0);
-                    NodeList activityNodes = scheduleElement.getElementsByTagName("Activity");
-                    for(int j = 0; j < activityNodes.getLength(); j++){
-                        Element activityElement = (Element)activityNodes.item(j);
-                        float activityX = Float.parseFloat(activityElement.getElementsByTagName("ActivityX").item(0).getTextContent());
-                        float activityY = Float.parseFloat(activityElement.getElementsByTagName("ActivityY").item(0).getTextContent());
-                        //schedule.add(new Activity(activityX, activityY));
-                    }
-                    buildingNew.addPerson(new Person(name, x,y,color,schedule));
-                }
-            }
-
             NodeList roomNodeList = doc.getElementsByTagName("Room");
 
             System.out.println("Parsing rooms");
@@ -258,6 +235,30 @@ public class Controller {
                         else buildingNew.addDoor(new Door(x,y,false));
                     }
 
+                }
+            }
+
+            NodeList personNodeList = doc.getElementsByTagName("Person");
+
+            for(int i = 0; i < personNodeList.getLength(); i++){
+                if(personNodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
+                    Element current = (Element)personNodeList.item(i);
+                    String name = current.getElementsByTagName("name").item(0).getTextContent();
+                    float x = Float.parseFloat(current.getElementsByTagName("x").item(0).getTextContent());
+                    float y = Float.parseFloat(current.getElementsByTagName("y").item(0).getTextContent());
+                    Color color = Color.web(current.getElementsByTagName("Colour").item(0).getTextContent());
+
+                    ArrayList<Activity> schedule = new ArrayList<>();
+                    Element scheduleElement = (Element) current.getElementsByTagName("Schedule").item(0);
+                    NodeList activityNodes = scheduleElement.getElementsByTagName("Activity");
+                    for(int j = 0; j < activityNodes.getLength(); j++){
+                        Element activityElement = (Element)activityNodes.item(j);
+                        float activityX = Float.parseFloat(activityElement.getElementsByTagName("ActivityX").item(0).getTextContent());
+                        float activityY = Float.parseFloat(activityElement.getElementsByTagName("ActivityY").item(0).getTextContent());
+                        int activityTime = Integer.parseInt(activityElement.getElementsByTagName("ActivityTime").item(0).getTextContent());
+                        schedule.add(new Activity(activityTime,activityX, activityY));
+                    }
+                    buildingNew.addPerson(new Person(name, x,y,color,schedule));
                 }
             }
 

@@ -101,6 +101,11 @@ public class Person extends AbstractObject{
     }
 
     public ArrayList<Activity> getSchedule(){
+        for(Activity a: activities){
+            if(a.getLocation() == null){
+                a.setLocation(Controller.searchForRoomByPoint(a.getX(), a.getY()));
+            }
+        }
         return activities;
     }
 
@@ -114,7 +119,7 @@ public class Person extends AbstractObject{
                 toiletNeed = 0;
             }
 
-            if(currentActivity.getLocation().getType().equals("Toilet") == false){
+            if(!currentActivity.getLocation().getType().equals("Toilet")){
                 pathStage = 0;
                 Room nearestToilet = building.searchForNearestToilet(getX(), getY());
                 currentActivity = new Activity(Controller.getHour(), nearestToilet);
@@ -221,11 +226,14 @@ public class Person extends AbstractObject{
             Element activityElement = doc.createElement("Activity");
             Element activityXElement = doc.createElement("ActivityX");
             Element activityYElement = doc.createElement("ActivityY");
+            Element activityTimeElement = doc.createElement("ActivityTime");
 
             activityXElement.setTextContent("" + a.getX());
             activityYElement.setTextContent("" + a.getY());
+            activityTimeElement.setTextContent("" + a.getTime());
             activityElement.appendChild(activityXElement);
             activityElement.appendChild(activityYElement);
+            activityElement.appendChild(activityTimeElement);
 
             scheduleElement.appendChild(activityElement);
         }
@@ -242,7 +250,7 @@ public class Person extends AbstractObject{
         return data;
     }
 
-    public ArrayList<CategoricData> generateRoomUsageReport(){
+    public ArrayList<CategoricData> generateRoomTypeReport(){
         ArrayList<CategoricData> types = new ArrayList<>();
         boolean exists = false;
 
@@ -264,12 +272,33 @@ public class Person extends AbstractObject{
         return types;
     }
 
+    public ArrayList<CategoricData> generateRoomNameReport(){
+        ArrayList<CategoricData> types = new ArrayList<>();
+        boolean exists = false;
+
+        for(PersonData pd: data){
+            for(CategoricData cd: types){
+                if(pd.getRoomName().equals(cd.category)){
+                    cd.occurances++;
+                    exists = true;
+                    break;
+                }
+            }
+
+            if(!exists){
+                types.add(new CategoricData(pd.getRoomType()));
+            }
+            exists = false;
+        }
+
+        return types;
+    }
+
     public void setEntrance(Entrance entrance) {
         this.entrance = entrance;
     }
 
-    public void resetToStartOfDay()
-    {
+    public void resetToStartOfDay(){
         dayFinished = false;
 
         //Reset activities

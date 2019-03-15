@@ -126,6 +126,40 @@ public class Room extends AbstractObject{
         data.add(roomData);
     }
 
+    public ArrayList<CategoricData> generateRoomUsageReport(){
+        ArrayList<CategoricData> usage = new ArrayList<>();
+
+        int timeUsed = 0;
+        int timeEmpty = 0;
+
+        for(RoomData rd: data){
+            if(rd.getNumberOfPeople() > 0) timeUsed++;
+            else timeEmpty++;
+        }
+
+
+        int total = timeEmpty + timeUsed;
+        int percentUsed, percentEmpty;
+        if(total > 0){
+            percentEmpty = (timeEmpty / total) * 100;
+            percentUsed = (timeUsed / total) * 100;
+        }
+        else {
+            percentEmpty = 0;
+            percentUsed = 0;
+        }
+
+        CategoricData usedData = new CategoricData("In Use");
+        CategoricData emptyData = new CategoricData("Empty");
+        usedData.occurances = percentUsed;
+        emptyData.occurances = percentEmpty;
+
+        usage.add(usedData);
+        usage.add(emptyData);
+
+        return usage;
+    }
+
     //Getters and setters--------------------------------------------------------------------
 
     public Color getFloorColour() {

@@ -4,13 +4,17 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import java.util.ArrayList;
 
 public class EditRoomMenu {
 
@@ -102,11 +106,17 @@ public class EditRoomMenu {
             editStage.close();
         });
 
+        Button reportButton = new Button("Report");
+        reportButton.setOnAction(actionEvent -> {
+            displayRoomReport(room.getId());
+        });
+
         HBox formattingBox = new HBox();
         formattingBox.setSpacing(10);
         formattingBox.getChildren().add(saveButton);
         formattingBox.getChildren().add(cancelButton);
         formattingBox.getChildren().add(deleteButton);
+        formattingBox.getChildren().add(reportButton);
         vbox.getChildren().add(formattingBox);
 
         Scene scene = new Scene(vbox);
@@ -114,5 +124,21 @@ public class EditRoomMenu {
         editStage.show();
 
         return editStage;
+    }
+
+    public void displayRoomReport(String id){
+        ArrayList<CategoricData> data = Controller.searchForRoom(id).generateRoomUsageReport();
+        XYChart roomUseChart = UIHelper.makeCategoricReport(data, "% of time", "Status", "Time");
+
+        Stage reportStage = new Stage();
+        reportStage.setTitle("Room Report");
+
+        GridPane gridPane = new GridPane();
+        gridPane.add(roomUseChart, 0,0);
+
+        Scene reportScene = new Scene(gridPane, 400,400);
+        reportStage.setScene(reportScene);
+
+        reportStage.show();
     }
 }

@@ -38,6 +38,10 @@ public class Activity {
         this.y = y;
     }
 
+    public void setLocation(Room room){
+        this.room = room;
+    }
+
     public float getX(){
         return x;
     }
@@ -47,6 +51,7 @@ public class Activity {
     }
 
     public Room getLocation(){
+        if(room == null) room = Controller.searchForRoomByPoint(x,y);
         return room;
     }
 

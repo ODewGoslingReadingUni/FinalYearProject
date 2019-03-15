@@ -18,4 +18,10 @@ public class PersonData {
         if(room != null) return room.getType();
         else return "None";
     }
+
+    public String getRoomName(){
+        Room room = Controller.searchForRoom(roomID);
+        if(room != null) return room.getName();
+        else return "None";
+    }
 }

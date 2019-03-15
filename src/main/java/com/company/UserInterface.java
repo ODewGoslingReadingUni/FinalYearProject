@@ -558,11 +558,13 @@ public class UserInterface extends Application {
             rect.setId(d.getId());
             rect.setCursor(Cursor.HAND);
             rect.setOnMouseClicked(mouseEvent -> {
-                Door doorToEdit = Controller.searchForDoor(rect.getId());
-                if(doorToEdit.getDoorType().equals("Entrance")){
-                    createEditEntranceMenu((Entrance)doorToEdit);
-                }else{
-                    createEditDoorMenu(doorToEdit);
+                if(mouseEvent.isPrimaryButtonDown()){
+                    Door doorToEdit = Controller.searchForDoor(rect.getId());
+                    if(doorToEdit.getDoorType().equals("Entrance")){
+                        createEditEntranceMenu((Entrance)doorToEdit);
+                    }else{
+                        createEditDoorMenu(doorToEdit);
+                    }
                 }
             });
             editPane.getChildren().add(rect);
@@ -573,12 +575,13 @@ public class UserInterface extends Application {
             Circle circle = new Circle(p.getX(), p.getY(), p.getRadius()/2, p.getColour());
             circle.setId(p.getId());
             circle.setOnMouseClicked( mouseEvent -> {
-                //Get the person record
-                Person personToEdit  = Controller.searchForPerson(circle.getId());
+                if(mouseEvent.isPrimaryButtonDown()){
+                    //Get the person record
+                    Person personToEdit  = Controller.searchForPerson(circle.getId());
 
-                //Open the edit pane
-                createEditPersonMenu(personToEdit);
-
+                    //Open the edit pane
+                    createEditPersonMenu(personToEdit);
+                }
             });
             circle.setCursor(Cursor.HAND);
             editPane.getChildren().add(circle);
