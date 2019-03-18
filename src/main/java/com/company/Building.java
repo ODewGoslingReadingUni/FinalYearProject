@@ -19,8 +19,8 @@ public class Building {
         entrances = new ArrayList<Entrance>();
     }
 
-    //Getter methods
 
+    //Getter methods
     public ArrayList<Wall> getWalls(){
         return walls;
     }
@@ -38,10 +38,6 @@ public class Building {
         allDoors.addAll(entrances);
 
         return allDoors;
-    }
-
-    public ArrayList<Entrance> getEntrances(){
-        return entrances;
     }
 
     public ArrayList<String> getEntranceNames(){
@@ -62,7 +58,6 @@ public class Building {
     }
 
     //Collision checking
-
     public String checkForCollisionWithWall(float x, float y){
         for(Wall w: walls){
             if(w.checkForCollision(x,y)) return w.getId();
@@ -91,10 +86,6 @@ public class Building {
 
     public void addPerson(Person person){
         people.add(person);
-    }
-
-    public void addPersonAt(float x, float y){
-        people.add(new Person(x,y));
     }
 
     public void addRoom(Room room){
@@ -224,7 +215,6 @@ public class Building {
 
 
     //Iteration and Pathfinding
-
     public void iterate(float timePeriod){
         for(Person p:people){
             p.iterate(this, timePeriod);
@@ -244,8 +234,14 @@ public class Building {
         return false;
     }
 
-    //Searching Methods
+    public void resetToStart(){
+        for(Person p: people){
+            p.reset();
+        }
+    }
 
+
+    //Searching Methods
     public Person searchForPersonById(String id){
         for(Person p: people){
             if(p.getId() == id){
@@ -289,6 +285,7 @@ public class Building {
     }
 
     public Door searchForDoorById(String id){
+
         for(Door d: getDoors()){
             if(d.getId().equals(id)){
                 return d;
@@ -329,8 +326,17 @@ public class Building {
         return null;
     }
 
-    //Deleting methods
+    public Entrance searchForEntranceById(String id){
+        System.out.println("entrances size: " + entrances.size());
+        for(Entrance e: entrances){
+            if(e.getId().equals(id)){
+                return e;
+            }
+        }
+        return null;
+    }
 
+    //Deleting methods
     public boolean deletePerson(String id){
         for(int i = 0; i < people.size(); i++){
             if(people.get(i).getId().equals(id)){
@@ -394,7 +400,7 @@ public class Building {
     private void gatherData(){
         for(Room r: rooms){
             int count = countPeopleInRoom(r);
-            r.recordRoomData(new RoomData(Controller.getTick(),count));
+            r.recordRoomData(new RoomData(Controller.getTime(),count));
         }
 
         for(Person p: people){

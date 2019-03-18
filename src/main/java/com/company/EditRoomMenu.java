@@ -127,16 +127,20 @@ public class EditRoomMenu {
     }
 
     public void displayRoomReport(String id){
-        ArrayList<CategoricData> data = Controller.searchForRoom(id).generateRoomUsageReport();
-        XYChart roomUseChart = UIHelper.makeCategoricReport(data, "% of time", "Status", "Time");
+        ArrayList<CategoricData> roomUseData = Controller.searchForRoom(id).generateRoomUsageReport();
+        ArrayList<RoomData> roomPopulationData = Controller.searchForRoom(id).getRoomData();
+        XYChart roomUseChart = UIHelper.makeCategoricReport(roomUseData, "% of time", "Status", "Time");
+        XYChart roomPopulationChart = UIHelper.makeLineGraph(roomPopulationData, "Time", "Number of People", "People");
 
         Stage reportStage = new Stage();
         reportStage.setTitle("Room Report");
 
         GridPane gridPane = new GridPane();
-        gridPane.add(roomUseChart, 0,0);
+        gridPane.add(roomPopulationChart,0,0);
+        gridPane.add(roomUseChart, 1,0);
 
-        Scene reportScene = new Scene(gridPane, 400,400);
+
+        Scene reportScene = new Scene(gridPane);
         reportStage.setScene(reportScene);
 
         reportStage.show();

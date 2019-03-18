@@ -7,6 +7,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -49,6 +50,7 @@ public class UserInterface extends Application {
     public static FloatProperty animationSpeed;
     public static StringProperty editButtonProperty;
     public static StringProperty playButtonProperty;
+    public static StringProperty timeProperty;
 
     public static final float WALL_THICKNESS = 6;
 
@@ -62,6 +64,7 @@ public class UserInterface extends Application {
         animationSpeed = new SimpleFloatProperty((float)5);
         editButtonProperty = new SimpleStringProperty("Edit");
         playButtonProperty = new SimpleStringProperty("Pause");
+        timeProperty = new SimpleStringProperty(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute());
 
         //Set up the scene
         root = createUserInterface();
@@ -137,8 +140,9 @@ public class UserInterface extends Application {
         toolBar.getItems().add(createEditButton());
         toolBar.getItems().add(createNewPersonButton());
 
-        toolBar.getItems().add(createSpeedLabel());
+        //toolBar.getItems().add(createSpeedLabel());
         toolBar.getItems().add(createNewWallButton());
+        toolBar.getItems().add(createTimeLabel());
 
         return toolBar;
     }
@@ -212,6 +216,23 @@ public class UserInterface extends Application {
         Menu reportingMenu = createMenu("Reporting", reportingMenuItems);
         menuBar.getMenus().add(reportingMenu);
 
+        MenuItem resetItem = new MenuItem("Reset");
+        resetItem.setOnAction(actionEvent -> {
+            Controller.reset();
+        });
+
+        MenuItem simulateDayItem = new MenuItem("Simulate Full Day");
+        simulateDayItem.setOnAction(actionEvent -> {
+            Controller.runFullDay();
+        });
+
+        ArrayList<MenuItem> simulationMenuItems = new ArrayList<>();
+        simulationMenuItems.add(resetItem);
+        simulationMenuItems.add(simulateDayItem);
+
+        Menu simulationMenu = createMenu("Simulation", simulationMenuItems);
+        menuBar.getMenus().add(simulationMenu);
+
         return menuBar;
     }
 
@@ -236,6 +257,13 @@ public class UserInterface extends Application {
     private Label createSpeedLabel(){
         Label label = new Label("Speed: " + animationSpeed.get());
         label.textProperty().bind(Bindings.createStringBinding(() -> "Speed: " + animationSpeed.get(), animationSpeed));
+        return label;
+    }
+
+    private Label createTimeLabel(){
+        Label label = new Label("Time: " + animationSpeed.get());
+        label.textProperty().bind(Bindings.createStringBinding(() -> "Time: " + timeProperty.get(), timeProperty));
+        label.setAlignment(Pos.CENTER_RIGHT);
         return label;
     }
 
@@ -282,21 +310,6 @@ public class UserInterface extends Application {
 
         EditWallMenu editWallMenu = new EditWallMenu(x,y);
         Stage editStage = editWallMenu.getEditWallStage();
-        editStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent windowEvent) {
-                updateEditPane();
-            }
-        });
-
-        return editStage;
-    }
-
-    private Stage createEditPersonMenu(float x, float y){
-        startEditing();
-
-        EditPersonMenu editPersonMenu = new EditPersonMenu(x,y);
-        Stage editStage = editPersonMenu.getEditPersonStage();
         editStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent windowEvent) {
@@ -358,7 +371,6 @@ public class UserInterface extends Application {
     }
 
     //Animation methods
-
     private AnimationTimer createAnimationTimer(GraphicsContext gc){
         AnimationTimer timer = new AnimationTimer() {
             @Override
@@ -393,6 +405,8 @@ public class UserInterface extends Application {
         drawPeople(gc, Controller.getPeopleLocations());
         drawWalls(gc, Controller.getWallLocations());
         drawDoors(gc, Controller.getDoorLocations());
+
+        timeProperty.setValue(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute());
     }
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
@@ -434,7 +448,6 @@ public class UserInterface extends Application {
     }
 
     //Methods to change application state
-
     private void startEditing(){
         pauseAnimation();
         editButtonProperty.setValue("Stop Editing");
@@ -453,7 +466,6 @@ public class UserInterface extends Application {
     }
 
     //Static methods
-
     public static TextField addTextInputFieldToParent(Pane parent, String name){
         HBox hbox = new HBox();
         TextField tf = new TextField();
@@ -558,13 +570,11 @@ public class UserInterface extends Application {
             rect.setId(d.getId());
             rect.setCursor(Cursor.HAND);
             rect.setOnMouseClicked(mouseEvent -> {
-                if(mouseEvent.isPrimaryButtonDown()){
-                    Door doorToEdit = Controller.searchForDoor(rect.getId());
-                    if(doorToEdit.getDoorType().equals("Entrance")){
-                        createEditEntranceMenu((Entrance)doorToEdit);
-                    }else{
-                        createEditDoorMenu(doorToEdit);
-                    }
+                Door doorToEdit = Controller.searchForDoor(rect.getId());
+                if(doorToEdit.getDoorType().equals("Entrance")){
+                    createEditEntranceMenu((Entrance)doorToEdit);
+                }else{
+                    createEditDoorMenu(doorToEdit);
                 }
             });
             editPane.getChildren().add(rect);
@@ -575,13 +585,11 @@ public class UserInterface extends Application {
             Circle circle = new Circle(p.getX(), p.getY(), p.getRadius()/2, p.getColour());
             circle.setId(p.getId());
             circle.setOnMouseClicked( mouseEvent -> {
-                if(mouseEvent.isPrimaryButtonDown()){
-                    //Get the person record
-                    Person personToEdit  = Controller.searchForPerson(circle.getId());
+                //Get the person record
+                Person personToEdit  = Controller.searchForPerson(circle.getId());
 
-                    //Open the edit pane
-                    createEditPersonMenu(personToEdit);
-                }
+                //Open the edit pane
+                createEditPersonMenu(personToEdit);
             });
             circle.setCursor(Cursor.HAND);
             editPane.getChildren().add(circle);

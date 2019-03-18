@@ -57,7 +57,7 @@ public class Person extends AbstractObject{
         colour = Color.GREEN;
     }
 
-    public Person(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
+    public Person(String name, float x, float y, Color colour, ArrayList<Activity> schedule, Entrance entrance){
         this();
 
         this.x = x;
@@ -65,6 +65,7 @@ public class Person extends AbstractObject{
         this.colour = colour;
         this.activities = schedule;
         this.name = name;
+        this.entrance = entrance;
 
         if(activities != null) {
             if(activities.size() > 0)currentActivity = activities.get(activityCount);
@@ -74,14 +75,6 @@ public class Person extends AbstractObject{
     }
 
     //Getters and setters-----------------------------------------------------------------------
-
-    public float getX(){
-        return x;
-    }
-
-    public float getY(){
-        return y;
-    }
 
     public void setPosition(float x, float y){
         this.x = x;
@@ -156,10 +149,6 @@ public class Person extends AbstractObject{
         return name;
     }
 
-    public String getId(){
-        return id;
-    }
-
     public void addActivity(Activity activity){
         activities.add(activity);
     }
@@ -215,10 +204,13 @@ public class Person extends AbstractObject{
         y1Element.setTextContent("" + getY());
         personElement.appendChild(y1Element);
 
+        Element entranceElement = doc.createElement("entranceID");
+        entranceElement.setTextContent("" + entrance.getId());
+        personElement.appendChild(entranceElement);
+
         Element colourElement = doc.createElement("Colour");
         colourElement.setTextContent(Helper.colorToRGBCode(getColour()));
         personElement.appendChild(colourElement);
-        //System.out.println("" + Helper.colorToRGBCode(p.getColour()));
 
         Element scheduleElement = doc.createElement("Schedule");
 
@@ -286,7 +278,7 @@ public class Person extends AbstractObject{
             }
 
             if(!exists){
-                types.add(new CategoricData(pd.getRoomType()));
+                types.add(new CategoricData(pd.getRoomName()));
             }
             exists = false;
         }
@@ -458,5 +450,26 @@ public class Person extends AbstractObject{
         else return false;
     }
 
+    public void reset(){
+        //Return to start position
+        x = entrance.getX();
+        y = entrance.getY();
+
+        //Reset timetable to first activity
+        pathStage = 0;
+        activityCount = 0;
+        if(activities != null) {
+            if(activities.size() > 0)currentActivity = activities.get(activityCount);
+            else currentActivity = null;
+        }
+        else currentActivity = null;
+
+        //Reset hunger, thirst, toilet need, etc.
+        hunger = 0;
+        toiletNeed = 0;
+        path = new ArrayList<>();
+        data = new ArrayList<>();
+        dayFinished = false;
+    }
 
 }

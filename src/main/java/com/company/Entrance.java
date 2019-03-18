@@ -31,6 +31,21 @@ public class Entrance extends Door{
         }
     }
 
+    public Entrance(float x, float y, boolean horizontal, String id){
+        this.x = x;
+        this.y = y;
+
+        if(horizontal){
+            width = 12;
+            height = UserInterface.WALL_THICKNESS;
+        } else{
+            width = UserInterface.WALL_THICKNESS;
+            height = 12;
+        }
+
+        this.id = id;
+    }
+
     @Override
     public Element getXML(Document doc) {
         Element doorElement = doc.createElement("Door");
@@ -40,6 +55,10 @@ public class Entrance extends Door{
         Element nameElement = doc.createElement("name");
         nameElement.setTextContent(name);
         doorElement.appendChild(nameElement);
+
+        Element idElement = doc.createElement("id");
+        idElement.setTextContent(id);
+        doorElement.appendChild(idElement);
 
         return doorElement;
     }

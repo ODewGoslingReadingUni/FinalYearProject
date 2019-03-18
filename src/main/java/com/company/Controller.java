@@ -19,7 +19,6 @@ import java.util.ArrayList;
 public class Controller {
 
     private static Building building;
-    private static float timer;
     private static final float WALL_WIDTH = UserInterface.WALL_THICKNESS;
     private static File currentFile;
     private static UserInterface activeUI;
@@ -31,9 +30,14 @@ public class Controller {
 
     public static void doInitialSetup(UserInterface ui){
         building = new Building();
-        timer = 0;
         tempPerson = new Person(0,0);
         activeUI = ui;
+        tick = 0;
+        time = LocalTime.of(9,0,0);
+    }
+
+    public static void reset(){
+        building.resetToStart();
         tick = 0;
         time = LocalTime.of(9,0,0);
     }
@@ -71,14 +75,27 @@ public class Controller {
     public static int getHour(){
         return time.getHour();
     }
-    //Iteration and calculation methods
 
+    public static LocalTime getTime(){
+        return time;
+    }
+
+
+    //Iteration and calculation methods
     public static void doIteration(float speed){
         float timePeriod = 60/speed;
         building.iterate(timePeriod);
-        System.out.println("Hour: " + Controller.getHour() + " Minutes: " + time.getMinute());
+        //System.out.println("Hour: " + Controller.getHour() + " Minutes: " + time.getMinute());
         time = time.plusSeconds(10);
         tick++;
+    }
+
+    public static void runFullDay(){
+        time = LocalTime.of(9,0,0);
+        while(time.getHour() < 18){
+            doIteration(5);
+        }
+        reset();
     }
 
     //File stuff
@@ -94,6 +111,19 @@ public class Controller {
             //Add root element
             Element rootElement = doc.createElement("RootElement");
             doc.appendChild(rootElement);
+
+            //Information about state of simulation
+            Element simulationElement = doc.createElement("simulation");
+
+            Element hoursElement = doc.createElement("hours");
+            hoursElement.setTextContent(""+ getHour());
+            simulationElement.appendChild(hoursElement);
+
+            Element minutesElement = doc.createElement("minutes");
+            minutesElement.setTextContent("" + time.getMinute());
+            simulationElement.appendChild(minutesElement);
+
+            rootElement.appendChild(simulationElement);
 
             //Store information about building layout
             Element buildingElement = doc.createElement("Building");
@@ -164,6 +194,22 @@ public class Controller {
             //Was recommended to do this
             doc.getDocumentElement().normalize();
 
+            //Get information about simulation state
+            int hours, minutes;
+            if(doc.getElementsByTagName("simulation").getLength() > 0){
+                Element simulationElem = (Element)doc.getElementsByTagName("simulation").item(0);
+                hours = Integer.parseInt(simulationElem.getElementsByTagName("hours").item(0).getTextContent());
+                minutes = Integer.parseInt(simulationElem.getElementsByTagName("minutes").item(0).getTextContent());
+            }
+            else{
+                hours = 9;
+                minutes = 0;
+            }
+
+
+            time = LocalTime.of(hours, minutes);
+
+            //Get information about walls
             NodeList wallNodeList = doc.getElementsByTagName("Wall");
 
             for(int i = 0; i < wallNodeList.getLength(); i++) {
@@ -226,8 +272,9 @@ public class Controller {
                     if(type.equals("Entrance")){
                         String name = current.getElementsByTagName("name").item(0).getTextContent();
                         Entrance entranceToAdd;
-                        if(width > height) entranceToAdd  = new Entrance(x,y,true);
-                        else entranceToAdd = new Entrance(x,y,false);
+                        String entranceID = current.getElementsByTagName("id").item(0).getTextContent();
+                        if(width > height) entranceToAdd  = new Entrance(x,y,true, entranceID);
+                        else entranceToAdd = new Entrance(x,y,false, entranceID);
                         entranceToAdd.setName(name);
                         buildingNew.addEntrance(entranceToAdd);
                     } else {
@@ -247,7 +294,7 @@ public class Controller {
                     float x = Float.parseFloat(current.getElementsByTagName("x").item(0).getTextContent());
                     float y = Float.parseFloat(current.getElementsByTagName("y").item(0).getTextContent());
                     Color color = Color.web(current.getElementsByTagName("Colour").item(0).getTextContent());
-
+                    String entranceID = current.getElementsByTagName("entranceID").item(0).getTextContent();
                     ArrayList<Activity> schedule = new ArrayList<>();
                     Element scheduleElement = (Element) current.getElementsByTagName("Schedule").item(0);
                     NodeList activityNodes = scheduleElement.getElementsByTagName("Activity");
@@ -258,7 +305,9 @@ public class Controller {
                         int activityTime = Integer.parseInt(activityElement.getElementsByTagName("ActivityTime").item(0).getTextContent());
                         schedule.add(new Activity(activityTime,activityX, activityY));
                     }
-                    buildingNew.addPerson(new Person(name, x,y,color,schedule));
+                    Entrance personEntrance = buildingNew.searchForEntranceById(entranceID);
+                    System.out.println("entrance: " + personEntrance);
+                    buildingNew.addPerson(new Person(name, x,y,color,schedule, personEntrance));
                 }
             }
 
@@ -333,18 +382,6 @@ public class Controller {
         activeUI.updateEditPane();
     }
 
-    public Person addPersonAt(float x, float y){
-        Person person = new Person(x,y);
-        building.addPerson(person);
-        return person;
-    }
-
-    public static Person addPersonWithSchedule(String name, float x, float y, Color colour, ArrayList<Activity> schedule){
-        Person person = new Person(name, x,y,colour, schedule);
-        building.addPerson(person);
-        return person;
-    }
-
     public static void upsertPerson(Person person){
         building.upsertPerson(person);
     }
@@ -386,6 +423,10 @@ public class Controller {
 
     public static Door searchForDoor(String id){
         return building.searchForDoorById(id);
+    }
+
+    public static Entrance searchForEntrance(String id){
+        return building.searchForEntranceById(id);
     }
 
     public static Room searchForRoomByPoint(float x, float y){

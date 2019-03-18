@@ -99,8 +99,8 @@ public class EditPersonMenu {
                         xStart,
                         yStart,
                         cp.getValue(),
-                        table.getData());
-                personNew.setEntrance(Controller.findEntranceByName(entranceComboBox.getValue().toString()));
+                        table.getData(),
+                        Controller.findEntranceByName(entranceComboBox.getValue().toString()));
                 Controller.upsertPerson(personNew);
                 Controller.doUIUpdate();
                 editStage.close();
@@ -163,7 +163,7 @@ public class EditPersonMenu {
         //Create stage/scene
         Stage reportStage = new Stage();
         reportStage.setTitle("Person Report");
-        Scene reportScene = new Scene(gridPane, 400,400);
+        Scene reportScene = new Scene(gridPane);
         reportStage.setScene(reportScene);
 
         reportStage.show();
