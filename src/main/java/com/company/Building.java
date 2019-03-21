@@ -236,7 +236,7 @@ public class Building {
 
     public void resetToStart(){
         for(Person p: people){
-            p.reset();
+            p.reset(this);
         }
     }
 

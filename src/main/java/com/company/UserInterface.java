@@ -61,7 +61,7 @@ public class UserInterface extends Application {
         rootStage = stage;
 
         editMode = new SimpleBooleanProperty(false);
-        animationSpeed = new SimpleFloatProperty((float)5);
+        animationSpeed = new SimpleFloatProperty((float)10);
         editButtonProperty = new SimpleStringProperty("Edit");
         playButtonProperty = new SimpleStringProperty("Pause");
         timeProperty = new SimpleStringProperty(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute());

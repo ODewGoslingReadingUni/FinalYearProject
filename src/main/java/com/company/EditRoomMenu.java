@@ -106,6 +106,7 @@ public class EditRoomMenu {
             editStage.close();
         });
 
+
         Button reportButton = new Button("Report");
         reportButton.setOnAction(actionEvent -> {
             displayRoomReport(room.getId());
@@ -115,8 +116,8 @@ public class EditRoomMenu {
         formattingBox.setSpacing(10);
         formattingBox.getChildren().add(saveButton);
         formattingBox.getChildren().add(cancelButton);
-        formattingBox.getChildren().add(deleteButton);
-        formattingBox.getChildren().add(reportButton);
+        if(room != null) formattingBox.getChildren().add(deleteButton);
+        if(room != null) formattingBox.getChildren().add(reportButton);
         vbox.getChildren().add(formattingBox);
 
         Scene scene = new Scene(vbox);
@@ -138,7 +139,6 @@ public class EditRoomMenu {
         GridPane gridPane = new GridPane();
         gridPane.add(roomPopulationChart,0,0);
         gridPane.add(roomUseChart, 1,0);
-
 
         Scene reportScene = new Scene(gridPane);
         reportStage.setScene(reportScene);

@@ -4,6 +4,7 @@ import javafx.scene.paint.Color;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -23,7 +24,12 @@ public class Person extends AbstractObject{
     private ArrayList<Coordinate> path;
     private float pathStage;
     private Activity currentActivity;
+
+    private String state;
+    private String pathType;
     private boolean dayFinished;
+    private float targetX;
+    private float targetY;
 
     private int toiletNeed;
     private final int toiletMax = 500;
@@ -47,6 +53,11 @@ public class Person extends AbstractObject{
         path = new ArrayList<>();
         data = new ArrayList<>();
         dayFinished = false;
+
+        state = "normal";
+        pathType = state;
+        targetX = 0;
+        targetY = targetX;
     }
 
     public Person(float x, float y){
@@ -100,49 +111,6 @@ public class Person extends AbstractObject{
             }
         }
         return activities;
-    }
-
-    public Activity getCurrentActivity(Building building){
-        if(currentActivity == null) return null;
-        if(dayFinished) return currentActivity;
-
-        if(toiletNeed >= toiletMax){
-            //If the person needs the toilet, go to toilet
-            if(Controller.searchForRoomByPoint(getX(),getY()).getType().equals("Toilet")) {
-                toiletNeed = 0;
-            }
-
-            if(!currentActivity.getLocation().getType().equals("Toilet")){
-                pathStage = 0;
-                Room nearestToilet = building.searchForNearestToilet(getX(), getY());
-                currentActivity = new Activity(Controller.getHour(), nearestToilet);
-                path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
-                return currentActivity;
-            }
-            return currentActivity;
-        } else {
-            //If they don't need the toilet, follow timetable
-            if(activityCount + 1 >= activities.size()){
-                //No more activities left- leave the building
-                currentActivity = new Activity(Controller.getHour() + 1, entrance.getX(), entrance.getY());
-                path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
-                pathStage = 0;
-                dayFinished = true;
-                return currentActivity;
-            } else {
-                if(Controller.getHour() < activities.get(activityCount + 1).getTime()){
-                    //We are already on the correct activity
-                    return currentActivity;
-                } else {
-                    //Get the next activity
-                    activityCount++;
-                    currentActivity = activities.get(activityCount);
-                    path = findPath(building,x,y,currentActivity.getX(), currentActivity.getY());
-                    pathStage = 0;
-                    return currentActivity;
-                }
-            }
-        }
     }
 
     public String getName(){
@@ -234,6 +202,12 @@ public class Person extends AbstractObject{
         return personElement;
     }
 
+    public void setEntrance(Entrance entrance) {
+        this.entrance = entrance;
+    }
+
+    //Data and reporting
+
     public void recordPersonData(PersonData personData){
         data.add(personData);
     }
@@ -286,10 +260,6 @@ public class Person extends AbstractObject{
         return types;
     }
 
-    public void setEntrance(Entrance entrance) {
-        this.entrance = entrance;
-    }
-
     public void resetToStartOfDay(){
         dayFinished = false;
 
@@ -306,143 +276,70 @@ public class Person extends AbstractObject{
     //Pathfinding and Movement------------------------------------------------------------------
 
     public void iterate(Building building, float timePeriod){
-        move(building,timePeriod);
         toiletNeed++;
         hunger++;
-    }
 
-    public void move(Building building, float timePeriod){
-        //Get target coordinates
-        if(currentActivity == null) return;
-        Activity a = getCurrentActivity(building);
-        float targetX = a.getX();
-        float targetY = a.getY();
+        if(state.equals("toilet")){
+            System.out.println("toilet state");
+            //Person needs to visit toilet
+            if(pathType.equals("toilet")){
+                move(timePeriod);
+                if(atTarget(x,y,targetX, targetY)){
+                    toiletNeed = 0;
+                    state = "normal";
+                }
+            } else {
+                Room nearestToilet = building.searchForNearestToilet(getX(), getY());
+                Coordinate target = nearestToilet.getRandomPointInRoom();
+                targetX = target.x;
+                targetY = target.y;
+                path = Pathfinding.findPath(building, x,y,targetX, targetY);
+                pathStage = 0;
+                pathType = "toilet";
+            }
+        }
+        else if(state.equals("normal")){
+            //Person follows planned timetable
 
-        //Set up initial path only
-        if(activities.size() > 0 && path.size() == 0) path = findPath(building,x,y,targetX, targetY);
+            System.out.println("normal state");
 
-        if(path.size() == 0) return;
+            if(toiletNeed > toiletMax) {
+                state = "toilet";
+                return;
+            }
 
-        final float INCREMENT = 4;
-
-        //Move if there's a path to follow and we are not at the target
-        if(path.size() > 1 && pathStage < path.size() && !atTargetPosition(building)){
-            Coordinate next = path.get((int)Math.floor(pathStage));
-            if(next.x > x) x += INCREMENT / timePeriod;
-            if(next.y > y) y += INCREMENT / timePeriod;
-            if(next.x < x) x -= INCREMENT / timePeriod;
-            if(next.y < y) y -= INCREMENT / timePeriod;
-            pathStage += 1/timePeriod;
+            if(pathType.equals("normal") && currentActivity.getTime() == Controller.getTime().getHour()){
+                if(currentActivity != null){
+                    if(!atTarget(x,y,targetX, targetY)){
+                        move(timePeriod);
+                    }
+                }
+            }
+            else {
+                //Set current activity to the correct one for the time
+                setCurrentActivity(building);
+            }
         }
     }
 
-    private ArrayList<Coordinate> findPath(Building building, float startX, float startY, float targetX, float targetY){
-        //Create lists to store data
-        ArrayList<Coordinate> openList = new ArrayList<>();
-        ArrayList<Coordinate> closedList = new ArrayList<>();
+    public void move(float timePeriod){
+        if(hasPath()){
+            final float INCREMENT = 4;
 
-        //Add starting node
-        openList.add(new Coordinate(startX, startY, 0, Helper.distance(startX,startY,targetX, targetY)));
-
-        int counter = 0;
-
-        //Loop until we find the target node
-        while(openList.size() > 0){
-
-            //Find the lowest f value in the list
-            int currentIndex = 0;
-            Coordinate currentNode = openList.get(currentIndex);
-
-            counter ++;
-            if(counter > 3000){
-                System.out.println("Open List Size: " + openList.size());
-                //If there is no possible path
-                return null;
-            }
-
-
-            for(int i = 0; i < openList.size(); i++){
-                if(openList.get(i).f < currentNode.f){
-                    currentNode = openList.get(i);
-                    currentIndex = i;
-                }
-            }
-
-            System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
-
-            openList.remove(currentNode);
-            closedList.add(currentNode);
-
-            //Checking if we have reached the target
-            if(Helper.approximatelyEqual(currentNode.x, targetX, 4) && Helper.approximatelyEqual(currentNode.y, targetY, 4)){
-                System.out.println("Target Reached");
-
-                 ArrayList<Coordinate> pathFromEnd = new ArrayList<>();
-                 pathFromEnd.add(currentNode);
-                 while(currentNode.parent != null){
-                     currentNode = currentNode.parent;
-                     pathFromEnd.add(currentNode);
-                 }
-
-                 Collections.reverse(pathFromEnd);
-                 return pathFromEnd;
-            }
-
-            ArrayList<Coordinate> neighbours = currentNode.generateNeighbours();
-
-            for(Coordinate c: neighbours){
-
-                //If neighbouring node is already in the closed list
-                if(coordinateInList(closedList, c.x,c.y)){
-                    continue;
-                }
-
-                //If node is not traversable, add to closed list
-                if(!building.isTraversable(c.x, c.y)){
-                    closedList.add(c);
-                    continue;
-                }
-
-                //Calculate values
-                c.g = currentNode.g + 4;
-                c.h = Helper.distance(c.x, c.y, targetX, targetY);
-                c.f = c.h + c.g;
-
-                useLowestGValue(openList, c);
+            //Move if there's a path to follow and we are not at the target
+            if(path.size() > 1 && pathStage < path.size() && !atTarget(x,y,targetX, targetY)){
+                Coordinate next = path.get((int)Math.floor(pathStage));
+                if(next.x > x) x += INCREMENT / timePeriod;
+                if(next.y > y) y += INCREMENT / timePeriod;
+                if(next.x < x) x -= INCREMENT / timePeriod;
+                if(next.y < y) y -= INCREMENT / timePeriod;
+                pathStage += 1/timePeriod;
             }
         }
-        return path;
+
     }
 
-    private boolean coordinateInList(ArrayList<Coordinate> list, float x, float y){
-        for(int i = 0; i < list.size(); i++){
-            if(list.get(i).x == x && list.get(i).y == y){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void useLowestGValue(ArrayList<Coordinate> list, Coordinate c){
-        for(int i = 0; i < list.size(); i++){
-            if(list.get(i).x == c.x && list.get(i).y == c.y){
-                if(list.get(i).g > c.g){
-                    list.get(i).g = c.g;
-                    return;
-                }
-                else{
-                    return;
-                }
-            }
-        }
-        //If coordinate is not already in the list
-       list.add(c);
-    }
-
-    private boolean atTargetPosition(Building building){
-        Activity a = getCurrentActivity(building);
-        float targetX = a.getX();
-        float targetY = a.getY();
+    private boolean atTarget(float x, float y, float targetX, float targetY){
 
         if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
             return true;
@@ -450,7 +347,27 @@ public class Person extends AbstractObject{
         else return false;
     }
 
-    public void reset(){
+    private boolean hasPath(){
+        if(path != null){
+            if(path.size() > 0) return true;
+            else return false;
+        }
+        else return false;
+    }
+
+    private Activity getActivityByTime(int hour){
+        while(hour >= 9){
+            for(Activity a: activities){
+                if(a.getTime() == hour){
+                    return a;
+                }
+            }
+            hour --;
+        }
+        return null;
+    }
+
+    public void reset(Building building){
         //Return to start position
         x = entrance.getX();
         y = entrance.getY();
@@ -470,6 +387,25 @@ public class Person extends AbstractObject{
         path = new ArrayList<>();
         data = new ArrayList<>();
         dayFinished = false;
+
+        state = "normal";
+        pathType = state;
+        targetX = 0;
+        targetY = targetX;
+
+        setCurrentActivity(building);
+    }
+
+    private void setCurrentActivity(Building building){
+        //Set current activity to the correct one for the time
+        currentActivity = getActivityByTime(Controller.getTime().getHour());
+        if(currentActivity != null){
+            targetX = currentActivity.getX();
+            targetY = currentActivity.getY();
+            path = Pathfinding.findPath(building, x,y,targetX, targetY);
+            pathStage = 0;
+            pathType = "normal";
+        }
     }
 
 }
