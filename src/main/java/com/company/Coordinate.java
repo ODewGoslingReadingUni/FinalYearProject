@@ -32,18 +32,24 @@ public class Coordinate {
         f = g + h;
     }
 
-    public ArrayList<Coordinate> generateNeighbours(){
+    public ArrayList<Coordinate> generateNeighbours(float width, float height){
         ArrayList<Coordinate> neighbours = new ArrayList<>();
+        float minX = 0;
+        float minY = 0;
+        float maxX = width;
+        float maxY = height;
 
-        neighbours.add(new Coordinate(x+INCREMENT, y, this));
-        neighbours.add(new Coordinate(x+INCREMENT, y+INCREMENT, this));
-        neighbours.add(new Coordinate(x, y+INCREMENT, this));
-        neighbours.add(new Coordinate(x-INCREMENT, y+INCREMENT, this));
-        neighbours.add(new Coordinate(x-INCREMENT, y, this));
-        neighbours.add(new Coordinate(x-INCREMENT, y-INCREMENT, this));
-        neighbours.add(new Coordinate(x, y-INCREMENT, this));
-        neighbours.add(new Coordinate(x+INCREMENT, y-INCREMENT, this));
+        if(x+INCREMENT < maxX) neighbours.add(new Coordinate(x+INCREMENT, y, this));
+        if(x+INCREMENT < maxX && y+INCREMENT < maxY) neighbours.add(new Coordinate(x+INCREMENT, y+INCREMENT, this));
+        if(y+INCREMENT < maxY) neighbours.add(new Coordinate(x, y+INCREMENT, this));
+        if(x-INCREMENT > minX && y+INCREMENT < maxY) neighbours.add(new Coordinate(x-INCREMENT, y+INCREMENT, this));
+        if(x-INCREMENT > minX) neighbours.add(new Coordinate(x-INCREMENT, y, this));
+        if(x-INCREMENT > minX && y-INCREMENT > minY) neighbours.add(new Coordinate(x-INCREMENT, y-INCREMENT, this));
+        if(y-INCREMENT > minY) neighbours.add(new Coordinate(x, y-INCREMENT, this));
+        if(x+INCREMENT < maxX && y-INCREMENT > minY) neighbours.add(new Coordinate(x+INCREMENT, y-INCREMENT, this));
 
         return neighbours;
     }
+
+
 }

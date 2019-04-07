@@ -32,7 +32,10 @@ public class UIHelper {
     public static XYChart makeLineGraph(ArrayList<RoomData> data, String xAxisLabel, String yAxisLabel, String chartName){
         NumberAxis xAxis = new NumberAxis();
         xAxis.setLabel(xAxisLabel);
+        xAxis.setAutoRanging(false);
         xAxis.setLowerBound(9);
+        xAxis.setUpperBound(19);
+        xAxis.setTickUnit(1);
 
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(yAxisLabel);

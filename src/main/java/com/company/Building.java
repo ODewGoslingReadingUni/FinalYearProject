@@ -25,6 +25,16 @@ public class Building {
         return walls;
     }
 
+    public ArrayList<Wall> getAllWalls(){
+        ArrayList<Wall> wallList = walls;
+        for(Room r: rooms){
+            for(Wall w: r.getWalls()){
+                wallList.add(w);
+            }
+        }
+        return wallList;
+    }
+
     public ArrayList<Person> getPeople(){
         return people;
     }
@@ -46,6 +56,18 @@ public class Building {
             names.add(e.getName());
         }
         return names;
+    }
+
+    public Coordinate getDimensions(){
+        float xMax = 0;
+        float yMax = 0;
+
+        for(Wall w: getAllWalls()){
+            if(w.getX() + w.getWidth() > xMax) xMax = w.getX() + w.getWidth();
+            if(w.getY() + w.getHeight() > yMax) yMax = w.getY() + w.getHeight();
+        }
+
+        return new Coordinate(xMax, yMax);
     }
 
     public Entrance findEntranceByName(String name){
@@ -74,9 +96,13 @@ public class Building {
         for(Door d: doors){
             if(d.checkForCollision(x,y)) return true;
         }
+
+        for(Entrance e: entrances){
+            if(e.checkForCollision(x,y)) return true;
+        }
+
         return false;
     }
-
 
     //Adding new objects and editing objects
     public void addWall(Wall wall){
@@ -240,6 +266,11 @@ public class Building {
         }
     }
 
+    public void triggerFireAlarm(){
+        for(Person p: people){
+            p.setState("alarm");
+        }
+    }
 
     //Searching Methods
     public Person searchForPersonById(String id){
@@ -334,6 +365,22 @@ public class Building {
             }
         }
         return null;
+    }
+
+    public Entrance searchForNearestExit(float x, float y){
+        if(entrances.size() == 0) return null;
+
+        float shortestDistance = 999999999;
+        Entrance nearestEntrance = null;
+
+        for(Entrance e: entrances){
+            float dist = Helper.distance(x,y,e.getX(), e.getY());
+            if(dist < shortestDistance){
+                shortestDistance = dist;
+                nearestEntrance = e;
+            }
+        }
+        return nearestEntrance;
     }
 
     //Deleting methods

@@ -10,10 +10,10 @@ public class Pathfinding {
         ArrayList<Coordinate> openList = new ArrayList<>();
         ArrayList<Coordinate> closedList = new ArrayList<>();
 
-        System.out.println("startX: " + startX);
+        /*System.out.println("startX: " + startX);
         System.out.println("startY: " + startY);
         System.out.println("targetX: " + targetX);
-        System.out.println("targetY: " + targetY);
+        System.out.println("targetY: " + targetY);*/
 
         //Add starting node
         openList.add(new Coordinate(startX, startY, 0, Helper.distance(startX,startY,targetX, targetY)));
@@ -31,7 +31,7 @@ public class Pathfinding {
                 }
             }
 
-            System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
+            //System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
 
             openList.remove(currentNode);
             closedList.add(currentNode);
@@ -50,7 +50,8 @@ public class Pathfinding {
                 return pathFromEnd;
             }
 
-            ArrayList<Coordinate> neighbours = currentNode.generateNeighbours();
+            Coordinate dimensions = building.getDimensions();
+            ArrayList<Coordinate> neighbours = currentNode.generateNeighbours(dimensions.x, dimensions.y);
 
             for(Coordinate c: neighbours){
 
@@ -73,7 +74,8 @@ public class Pathfinding {
                 useLowestGValue(openList, c);
             }
         }
-        return new ArrayList<Coordinate>();
+        System.out.println("no path found");
+        return null;
     }
 
     private static boolean coordinateInList(ArrayList<Coordinate> list, float x, float y){

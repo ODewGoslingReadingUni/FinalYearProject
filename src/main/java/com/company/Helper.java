@@ -64,4 +64,13 @@ public class Helper {
             }
         }
     }
+
+    public static boolean inBounds(float x, float y, float minX, float minY, float maxX, float maxY){
+        if(x > minX && x < maxX && y > minY && y < maxY){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

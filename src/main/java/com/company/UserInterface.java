@@ -226,7 +226,13 @@ public class UserInterface extends Application {
             Controller.runFullDay();
         });
 
+        MenuItem fireAlarmItem = new MenuItem("Trigger Fire Alarm");
+        fireAlarmItem.setOnAction(actionEvent -> {
+            Controller.triggerFireAlarm();
+        });
+
         ArrayList<MenuItem> simulationMenuItems = new ArrayList<>();
+        simulationMenuItems.add(fireAlarmItem);
         simulationMenuItems.add(resetItem);
         simulationMenuItems.add(simulateDayItem);
 
@@ -411,8 +417,10 @@ public class UserInterface extends Application {
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
         for(Person p: people){
-            gc.setFill(p.getColour());
-            gc.fillOval(p.getX() - p.getRadius()/2, p.getY() - p.getRadius()/2, p.getRadius(), p.getRadius());
+            if(!p.getState().equals("outside")){
+                gc.setFill(p.getColour());
+                gc.fillOval(p.getX() - p.getRadius()/2, p.getY() - p.getRadius()/2, p.getRadius(), p.getRadius());
+            }
         }
     }
 

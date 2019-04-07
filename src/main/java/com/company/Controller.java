@@ -80,7 +80,6 @@ public class Controller {
         return time;
     }
 
-
     //Iteration and calculation methods
     public static void doIteration(float speed){
         float timePeriod = 60/speed;
@@ -457,6 +456,10 @@ public class Controller {
 
     public static void doUIUpdate(){
         activeUI.updateEditPane();
+    }
+
+    public static void triggerFireAlarm(){
+        building.triggerFireAlarm();
     }
 
     private static Wall processWallElement(Element element){

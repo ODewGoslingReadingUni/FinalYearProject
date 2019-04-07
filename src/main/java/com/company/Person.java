@@ -104,6 +104,10 @@ public class Person extends AbstractObject{
         this.colour = colour;
     }
 
+    public void setState(String state){
+        this.state = state;
+    }
+
     public ArrayList<Activity> getSchedule(){
         for(Activity a: activities){
             if(a.getLocation() == null){
@@ -115,6 +119,10 @@ public class Person extends AbstractObject{
 
     public String getName(){
         return name;
+    }
+
+    public String getState(){
+        return state;
     }
 
     public void addActivity(Activity activity){
@@ -279,7 +287,30 @@ public class Person extends AbstractObject{
         toiletNeed++;
         hunger++;
 
-        if(state.equals("toilet")){
+        if(state.equals("outside")){
+            System.out.println("outside state");
+            return;
+        }
+
+        if(state.equals("alarm")){
+            //Go to nearest exit
+            System.out.println("Alarm state");
+            if(pathType.equals("alarm")){
+                move(timePeriod);
+                System.out.println("moving");
+                if(atTarget(x,y,targetX,targetY)){
+                    state = "outside";
+                }
+            } else {
+                Entrance nearestExit = building.searchForNearestExit(getX(),getY());
+                targetX = nearestExit.x + nearestExit.width/2;
+                targetY = nearestExit.y + nearestExit.height/2;
+                path = Pathfinding.findPath(building,x,y,targetX,targetY);
+                pathStage = 0;
+                pathType = "alarm";
+            }
+        }
+        else if(state.equals("toilet")){
             System.out.println("toilet state");
             //Person needs to visit toilet
             if(pathType.equals("toilet")){
@@ -320,10 +351,19 @@ public class Person extends AbstractObject{
                 setCurrentActivity(building);
             }
         }
+        else if(state.equals("leaving")){
+            if(atTarget(x,y,targetX, targetY)){
+                state = "outside";
+            }
+            else{
+                move(timePeriod);
+            }
+        }
     }
 
     public void move(float timePeriod){
         if(hasPath()){
+            System.out.println("has path");
             final float INCREMENT = 4;
 
             //Move if there's a path to follow and we are not at the target
@@ -399,13 +439,33 @@ public class Person extends AbstractObject{
     private void setCurrentActivity(Building building){
         //Set current activity to the correct one for the time
         currentActivity = getActivityByTime(Controller.getTime().getHour());
+
         if(currentActivity != null){
-            targetX = currentActivity.getX();
-            targetY = currentActivity.getY();
-            path = Pathfinding.findPath(building, x,y,targetX, targetY);
-            pathStage = 0;
-            pathType = "normal";
+            if(isLastActivity(currentActivity) && Controller.getHour() > currentActivity.getTime()){
+                Entrance nearestExit = building.searchForNearestExit(x,y);
+                Coordinate target =  nearestExit.getCenter();
+                targetX = target.x;
+                targetY = target.y;
+                path = Pathfinding.findPath(building,x,y,targetX,targetY);
+                pathStage = 0;
+                pathType = "leaving";
+                state = "leaving";
+
+            } else {
+                targetX = currentActivity.getX();
+                targetY = currentActivity.getY();
+                path = Pathfinding.findPath(building, x,y,targetX, targetY);
+                pathStage = 0;
+                pathType = "normal";
+            }
         }
+    }
+
+    private boolean isLastActivity(Activity activity){
+        for(Activity a: activities){
+            if(activity.getTime() < a.getTime()) return false;
+        }
+        return true;
     }
 
 }
