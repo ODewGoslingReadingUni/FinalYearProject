@@ -13,6 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -20,9 +21,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
@@ -31,14 +30,16 @@ import javafx.scene.paint.Color;
 import javafx.stage.WindowEvent;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Optional;
 
 public class UserInterface extends Application {
 
-    public static final int WIDTH = 640;
-    public static final int HEIGHT = 480;
-    public static final float SPEED_INCREMENT = (float)5;
+    public static final int WIDTH = 1200;
+    public static final int HEIGHT = 700;
+    public static final float SPEED_INCREMENT = (float)10;
 
     public static Stage rootStage;
     private BorderPane root;
@@ -64,7 +65,7 @@ public class UserInterface extends Application {
         animationSpeed = new SimpleFloatProperty((float)10);
         editButtonProperty = new SimpleStringProperty("Edit");
         playButtonProperty = new SimpleStringProperty("Pause");
-        timeProperty = new SimpleStringProperty(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute());
+        timeProperty = new SimpleStringProperty(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute() + " : " + Controller.getTime().getSecond());
 
         //Set up the scene
         root = createUserInterface();
@@ -133,14 +134,14 @@ public class UserInterface extends Application {
         Button pauseButton = createPauseButton();
         Button fastForwardButton = createFastForwardButton();
 
-        //toolBar.getItems().add(slowDownButton);
+        toolBar.getItems().add(slowDownButton);
         toolBar.getItems().add(pauseButton);
-        //toolBar.getItems().add(fastForwardButton);
+        toolBar.getItems().add(fastForwardButton);
 
         toolBar.getItems().add(createEditButton());
         toolBar.getItems().add(createNewPersonButton());
 
-        //toolBar.getItems().add(createSpeedLabel());
+        toolBar.getItems().add(createSpeedLabel());
         toolBar.getItems().add(createNewWallButton());
         toolBar.getItems().add(createTimeLabel());
 
@@ -255,14 +256,14 @@ public class UserInterface extends Application {
     private Button createFastForwardButton(){
         Button button = new Button("Faster");
         button.setOnAction((event) ->{
-            if(animationSpeed.get() < 10 * SPEED_INCREMENT) animationSpeed.set(animationSpeed.get() + SPEED_INCREMENT);
+            if(animationSpeed.get() < 30 * SPEED_INCREMENT) animationSpeed.set(animationSpeed.get() + SPEED_INCREMENT);
         });
         return button;
     }
 
     private Label createSpeedLabel(){
         Label label = new Label("Speed: " + animationSpeed.get());
-        label.textProperty().bind(Bindings.createStringBinding(() -> "Speed: " + animationSpeed.get(), animationSpeed));
+        label.textProperty().bind(Bindings.createStringBinding(() -> "Speed: " + animationSpeed.get() / 10, animationSpeed));
         return label;
     }
 
@@ -390,7 +391,7 @@ public class UserInterface extends Application {
         return timer;
     }
 
-    private void pauseAnimation(){
+    public void pauseAnimation(){
         playAnimation = false;
         playButtonProperty.setValue("Play");
     }
@@ -412,7 +413,7 @@ public class UserInterface extends Application {
         drawWalls(gc, Controller.getWallLocations());
         drawDoors(gc, Controller.getDoorLocations());
 
-        timeProperty.setValue(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute());
+        timeProperty.setValue(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute() + " : " + Controller.getTime().getSecond());
     }
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
@@ -674,12 +675,38 @@ public class UserInterface extends Application {
         return contextMenu;
     }
 
-    public static void displayErrorDialog(){
+    //Evacuation data
 
-    }
+    public void showEvacuationData(LocalTime startTime, LocalTime endTime, ArrayList<NumericData> evacuationData){
+        //Create charts of data to view
 
-    public static void displayInlineErrorMessage(String message, Node parent){
+        XYChart evacuationChart = UIHelper.makeLineGraph(evacuationData, "Time (seconds)", "Number of people", "Evacuation");
 
+        //Show start and end time
+        Duration difference = Duration.between(startTime, endTime);
+        long diffSeconds = difference.getSeconds();
+        Label startTimeLabel = new Label("Start Time: " +  startTime.toString());
+        Label endTimeLabel = new Label("End Time: " + endTime.toString());
+        Label differenceLabel = new Label("Time Taken: " + diffSeconds + " seconds");
+
+        VBox vbox = new VBox();
+        vbox.getChildren().add(startTimeLabel);
+        vbox.getChildren().add(endTimeLabel);
+        vbox.getChildren().add(differenceLabel);
+
+        //Add charts to grid pane
+        GridPane gridPane = new GridPane();
+        gridPane.add(vbox, 0, 0);
+        gridPane.add(evacuationChart, 1,0);
+
+
+        //Create stage/scene
+        Stage reportStage = new Stage();
+        reportStage.setTitle("Evacutation Report");
+        Scene reportScene = new Scene(gridPane);
+        reportStage.setScene(reportScene);
+
+        reportStage.show();
     }
 
 }

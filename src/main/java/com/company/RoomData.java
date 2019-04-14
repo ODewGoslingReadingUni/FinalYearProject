@@ -5,7 +5,7 @@ import java.time.LocalTime;
 public class RoomData {
     private int tick;
     private float hour;
-    private int numberOfPeople;
+    private float numberOfPeople;
 
     public RoomData(LocalTime time, int numberOfPeople){
         hour = time.getHour() + ((float)time.getMinute() / 60);
@@ -20,7 +20,7 @@ public class RoomData {
         return hour;
     }
 
-    public int getNumberOfPeople() {
+    public float getNumberOfPeople() {
         return numberOfPeople;
     }
 }

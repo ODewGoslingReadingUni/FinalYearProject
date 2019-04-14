@@ -27,14 +27,11 @@ public class Person extends AbstractObject{
 
     private String state;
     private String pathType;
-    private boolean dayFinished;
     private float targetX;
     private float targetY;
 
-    private int toiletNeed;
-    private final int toiletMax = 500;
-    private int hunger;
-    private final int hungerMax = 2000;
+    private float toiletNeed;
+    private final float toiletMax = 3000;
 
     //Constructors----------------------------------------------------------------------------
 
@@ -46,13 +43,11 @@ public class Person extends AbstractObject{
         name = "default name";
 
         //Setting internal variables to defaults
-        hunger = 0;
         toiletNeed = 0;
         activityCount = 0;
         pathStage = 0;
         path = new ArrayList<>();
         data = new ArrayList<>();
-        dayFinished = false;
 
         state = "normal";
         pathType = state;
@@ -269,7 +264,6 @@ public class Person extends AbstractObject{
     }
 
     public void resetToStartOfDay(){
-        dayFinished = false;
 
         //Reset activities
         pathStage = 0;
@@ -284,11 +278,10 @@ public class Person extends AbstractObject{
     //Pathfinding and Movement------------------------------------------------------------------
 
     public void iterate(Building building, float timePeriod){
-        toiletNeed++;
-        hunger++;
+        toiletNeed += timePeriod;
 
         if(state.equals("outside")){
-            System.out.println("outside state");
+            //System.out.println("outside state");
             return;
         }
 
@@ -297,7 +290,7 @@ public class Person extends AbstractObject{
             System.out.println("Alarm state");
             if(pathType.equals("alarm")){
                 move(timePeriod);
-                System.out.println("moving");
+                //System.out.println("moving");
                 if(atTarget(x,y,targetX,targetY)){
                     state = "outside";
                 }
@@ -319,6 +312,7 @@ public class Person extends AbstractObject{
                     toiletNeed = 0;
                     state = "normal";
                 }
+                //System.out.println("not at target");
             } else {
                 Room nearestToilet = building.searchForNearestToilet(getX(), getY());
                 Coordinate target = nearestToilet.getRandomPointInRoom();
@@ -383,6 +377,8 @@ public class Person extends AbstractObject{
 
         if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
             return true;
+        } else if(pathStage >= path.size()){
+            return true;
         }
         else return false;
     }
@@ -422,11 +418,9 @@ public class Person extends AbstractObject{
         else currentActivity = null;
 
         //Reset hunger, thirst, toilet need, etc.
-        hunger = 0;
         toiletNeed = 0;
         path = new ArrayList<>();
         data = new ArrayList<>();
-        dayFinished = false;
 
         state = "normal";
         pathType = state;

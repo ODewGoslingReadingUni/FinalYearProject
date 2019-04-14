@@ -2,6 +2,9 @@ package com.company;
 
 import javafx.scene.paint.Color;
 
+import java.security.spec.ECField;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 public class Building {
@@ -11,12 +14,22 @@ public class Building {
     private ArrayList<Door> doors;
     private ArrayList<Entrance> entrances;
 
+    private boolean evacuation;
+    private LocalTime evacuationStartTime;
+    private LocalTime evacuationEndTime;
+    private ArrayList<EvacuationData> evacuationDataList;
+
     public Building(){
         walls = new ArrayList<Wall>();
         people = new ArrayList<Person>();
         rooms = new ArrayList<Room>();
         doors = new ArrayList<Door>();
         entrances = new ArrayList<Entrance>();
+
+        evacuation = false;
+        evacuationStartTime = null;
+        evacuationEndTime = null;
+        evacuationDataList = new ArrayList<>();
     }
 
 
@@ -246,6 +259,7 @@ public class Building {
             p.iterate(this, timePeriod);
         }
         gatherData();
+        if(isEmpty()) evacuationEndTime = Controller.getTime();
     }
 
     public boolean isTraversable(float x, float y){
@@ -261,12 +275,17 @@ public class Building {
     }
 
     public void resetToStart(){
+        evacuation = false;
+        evacuationStartTime = null;
+        evacuationEndTime = null;
         for(Person p: people){
             p.reset(this);
         }
     }
 
     public void triggerFireAlarm(){
+        evacuation = true;
+        evacuationStartTime = Controller.getTime();
         for(Person p: people){
             p.setState("alarm");
         }
@@ -454,6 +473,10 @@ public class Building {
             String roomID = getRoomFromPoint(p.getX(), p.getY());
             if(roomID != null) p.recordPersonData(new PersonData(Controller.getTick(), roomID));
         }
+
+        if(evacuation){
+            recordEvacuationData();
+        }
     }
 
     private int countPeopleInRoom(Room room){
@@ -475,4 +498,55 @@ public class Building {
         return "None";
     }
 
+    public boolean isEmpty(){
+        if(people.size() == 0) {
+            System.out.println("no people");
+            return true;
+        }
+
+
+        if(numPeopleInBuilding() == 0) {
+            System.out.println("num people is 0");
+            return true;
+        }
+
+        System.out.println("false");
+        return false;
+    }
+
+    public int numPeopleInBuilding(){
+        int count = 0;
+        for(Person p: people){
+            if(!p.getState().equals("outside")) count++;
+        }
+        return count;
+    }
+
+    private void recordEvacuationData(){
+        long timeSinceEvacuation = Duration.between(evacuationStartTime, Controller.getTime()).getSeconds();
+        evacuationDataList.add(new EvacuationData(numPeopleInBuilding(), timeSinceEvacuation));
+    }
+
+    public ArrayList<NumericData> getEvacuationDataAsNumericData(){
+        ArrayList<NumericData> numericData = new ArrayList<>();
+        for(EvacuationData ed: evacuationDataList){
+            numericData.add(new NumericData(ed.hour, ed.peopleInBuilding));
+        }
+        return numericData;
+    }
+
+    public boolean evacuationIsFinished(){
+        if(evacuation && evacuationEndTime != null){
+            return true;
+        }
+         else return false;
+    }
+
+    public LocalTime getEvacuationEndTime() {
+        return evacuationEndTime;
+    }
+
+    public LocalTime getEvacuationStartTime() {
+        return evacuationStartTime;
+    }
 }

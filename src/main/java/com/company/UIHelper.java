@@ -29,13 +29,13 @@ public class UIHelper {
 
     }
 
-    public static XYChart makeLineGraph(ArrayList<RoomData> data, String xAxisLabel, String yAxisLabel, String chartName){
+    public static XYChart makeLineGraph(ArrayList<NumericData> data, String xAxisLabel, String yAxisLabel, String chartName){
         NumberAxis xAxis = new NumberAxis();
         xAxis.setLabel(xAxisLabel);
         xAxis.setAutoRanging(false);
-        xAxis.setLowerBound(9);
-        xAxis.setUpperBound(19);
-        xAxis.setTickUnit(1);
+        xAxis.setLowerBound(lowestXValue(data));
+        xAxis.setUpperBound(highestXValue(data));
+        //xAxis.setTickUnit(1);
 
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(yAxisLabel);
@@ -43,8 +43,8 @@ public class UIHelper {
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
         XYChart.Series series = new XYChart.Series();
         series.setName(chartName);
-        for(RoomData rd: data){
-            series.getData().add(new XYChart.Data(rd.getHour(), rd.getNumberOfPeople()));
+        for(NumericData nd: data){
+            series.getData().add(new XYChart.Data(nd.xAxis, nd.yAxis));
         }
 
         lineChart.getData().add(series);
@@ -52,5 +52,29 @@ public class UIHelper {
         lineChart.setCreateSymbols(false);
 
         return lineChart;
+    }
+
+    private static float lowestXValue(ArrayList<NumericData> data){
+        if(data.size() == 0) return 0;
+
+        float lowestValue = 99999999;
+        for(NumericData nd: data){
+            if(nd.xAxis < lowestValue){
+                lowestValue = nd.xAxis;
+            }
+        }
+        return lowestValue;
+    }
+
+    private static float highestXValue(ArrayList<NumericData> data){
+        if(data.size() == 0) return 0;
+
+        float highestValue = 0;
+        for(NumericData nd: data){
+            if(nd.xAxis > highestValue){
+                highestValue = nd.xAxis;
+            }
+        }
+        return highestValue;
     }
 }

@@ -129,7 +129,7 @@ public class EditRoomMenu {
 
     public void displayRoomReport(String id){
         ArrayList<CategoricData> roomUseData = Controller.searchForRoom(id).generateRoomUsageReport();
-        ArrayList<RoomData> roomPopulationData = Controller.searchForRoom(id).getRoomData();
+        ArrayList<NumericData> roomPopulationData = Controller.searchForRoom(id).getRoomDataAsNumericData();
         XYChart roomUseChart = UIHelper.makeCategoricReport(roomUseData, "% of time", "Status", "Time");
         XYChart roomPopulationChart = UIHelper.makeLineGraph(roomPopulationData, "Time", "Number of People", "People");
 
@@ -145,4 +145,6 @@ public class EditRoomMenu {
 
         reportStage.show();
     }
+
+
 }

@@ -37,9 +37,9 @@ public class Controller {
     }
 
     public static void reset(){
-        building.resetToStart();
         tick = 0;
         time = LocalTime.of(9,0,0);
+        building.resetToStart();
     }
 
     //Getter methods
@@ -84,8 +84,13 @@ public class Controller {
     public static void doIteration(float speed){
         float timePeriod = 60/speed;
         building.iterate(timePeriod);
-        //System.out.println("Hour: " + Controller.getHour() + " Minutes: " + time.getMinute());
-        time = time.plusSeconds(10);
+        if(building.evacuationIsFinished()){
+            System.out.println("show evacuation data");
+            activeUI.showEvacuationData(building.getEvacuationStartTime(), building.getEvacuationEndTime() ,building.getEvacuationDataAsNumericData());
+            reset();
+            activeUI.pauseAnimation();
+        }
+        time = time.plusSeconds((long)speed/10);
         tick++;
     }
 
@@ -460,6 +465,7 @@ public class Controller {
 
     public static void triggerFireAlarm(){
         building.triggerFireAlarm();
+
     }
 
     private static Wall processWallElement(Element element){

@@ -223,6 +223,15 @@ public class Room extends AbstractObject{
         return data;
     }
 
+    public ArrayList<NumericData> getRoomDataAsNumericData(){
+        ArrayList<NumericData> numericData = new ArrayList<>();
+        for(RoomData rd: data){
+            numericData.add(new NumericData(rd.getHour(), rd.getNumberOfPeople()));
+        }
+        return numericData;
+    }
+
+
     public Coordinate getRandomPointInRoom(){
         Random r = new Random();
         int x, y;
