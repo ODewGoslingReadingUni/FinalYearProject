@@ -117,6 +117,14 @@ public class Building {
         return false;
     }
 
+    public boolean checkForCollisionWithPerson(float x, float y){
+        for(Person p: people){
+            if(p.checkForCollision(x,y)) return true;
+        }
+
+        return false;
+    }
+
     //Adding new objects and editing objects
     public void addWall(Wall wall){
         wall = alignWall(wall);

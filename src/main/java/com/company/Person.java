@@ -462,4 +462,14 @@ public class Person extends AbstractObject{
         return true;
     }
 
+    @Override
+    public boolean checkForCollision(float x, float y) {
+        float dx = this.x - x;
+        float dy = this.y - y;
+
+        if(Math.sqrt(dx*dx + dy*dy) < getRadius()){
+            return true;
+        }
+        else return false;
+    }
 }
