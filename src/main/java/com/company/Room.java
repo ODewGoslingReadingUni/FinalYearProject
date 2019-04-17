@@ -29,7 +29,7 @@ public class Room extends AbstractObject{
         data = new ArrayList<>();
 
         //Add new walls
-       walls = setUpWalls(x,y,width, height);
+        walls = setUpWalls(x,y,width, height);
         //walls = new ArrayList<Wall>();
     }
 

@@ -19,6 +19,9 @@ public class Building {
     private LocalTime evacuationEndTime;
     private ArrayList<EvacuationData> evacuationDataList;
 
+    private float dataTimer;
+    private final float dataTimerMax = 300; //Every 5 minutes
+
     public Building(){
         walls = new ArrayList<Wall>();
         people = new ArrayList<Person>();
@@ -30,6 +33,7 @@ public class Building {
         evacuationStartTime = null;
         evacuationEndTime = null;
         evacuationDataList = new ArrayList<>();
+        dataTimer = 0;
     }
 
 
@@ -122,6 +126,13 @@ public class Building {
             if(p.checkForCollision(x,y)) return true;
         }
 
+        return false;
+    }
+
+    public boolean checkForCollisionWithPerson(float x, float y, String id){
+        for(Person p: people){
+            if(p.checkForCollision(x,y) && !p.getId().equals(id) && !p.getState().equals("outside") && !p.getState().equals("inactive")) return true;
+        }
         return false;
     }
 
@@ -266,19 +277,19 @@ public class Building {
         for(Person p:people){
             p.iterate(this, timePeriod);
         }
-        gatherData();
+        gatherData(timePeriod);
         if(isEmpty()) evacuationEndTime = Controller.getTime();
     }
 
-    public boolean isTraversable(float x, float y){
+    public boolean isTraversable(float x, float y, String id){
         if(checkForCollisionWithDoor(x,y)){
             //If there is a door, it's traversable
             return true;
-        } else if(checkForCollisionWithWall(x,y) == null){
-            //If there is no wall, it's traversable
+        } else if(checkForCollisionWithWall(x,y) == null && !checkForCollisionWithPerson(x,y,id)){
+            //If there is no wall it's traversable
             return true;
         }
-        //If neither of the above conditions are true, it's not traversable.
+        //If neither of the above conditions are true, it's not traversable
         return false;
     }
 
@@ -421,27 +432,36 @@ public class Building {
         return false;
     }
 
-    public boolean deleteWall(String id){
+    public void deleteWall(String id){
         //Search the standard wall list
-        for(Wall w: walls){
-            if(w.getId().equals(id)){
-                walls.remove(w);
-                return true;
+        System.out.println("delete wall");
+
+        for(int i = 0; i < walls.size(); i++){
+            if(walls.get(i).getId().equals(id)){
+                walls.remove(walls.get(i));
+                System.out.println("delete wall from walls");
             }
         }
 
-        for(Room r: rooms){
-            ArrayList<Wall> walls2 = r.getWalls();
-            for(Wall w: walls2){
-                if(w.getId().equals(id)){
-                    r.removeWall(w);
-                    return true;
+        for(int i = 0; i < rooms.size(); i++){
+            ArrayList<Wall> walls2 = rooms.get(i).getWalls();
+            for(int j = 0; j < walls2.size(); j++){
+                if(walls2.get(j).getId().equals(id)){
+                    System.out.println("delete wall from rooms");
+                    rooms.get(i).removeWall(walls2.get(j));
                 }
             }
         }
-
-        //Wall not found
-        return false;
+        /*for(Room r: rooms){
+            //r.removeWall(id);
+            ArrayList<Wall> walls2 = r.getWalls();
+            for(Wall w: walls2){
+                if(w.getId().equals(id)){
+                    System.out.println("delete wall from rooms");
+                    r.removeWall(w);
+                }
+            }
+        }*/
     }
 
     public boolean deleteRoom(String id){
@@ -468,20 +488,25 @@ public class Building {
         else return false;
     }
 
-
     //Instrumentation Methods
 
-    private void gatherData(){
-        for(Room r: rooms){
-            int count = countPeopleInRoom(r);
-            r.recordRoomData(new RoomData(Controller.getTime(),count));
-        }
+    private void gatherData(float timePeriod){
 
-        for(Person p: people){
-            String roomID = getRoomFromPoint(p.getX(), p.getY());
-            if(roomID != null) p.recordPersonData(new PersonData(Controller.getTick(), roomID));
-        }
+        if(dataTimer > dataTimerMax){
 
+            for(Room r: rooms){
+                int count = countPeopleInRoom(r);
+                r.recordRoomData(new RoomData(Controller.getTime(),count));
+            }
+
+            for(Person p: people){
+                String roomID = getRoomFromPoint(p.getX(), p.getY());
+                if(roomID != null) p.recordPersonData(new PersonData(Controller.getTick(), roomID));
+            }
+            dataTimer = 0;
+        } else {
+            dataTimer += (60/timePeriod)/10;
+        }
         if(evacuation){
             recordEvacuationData();
         }
@@ -518,7 +543,6 @@ public class Building {
             return true;
         }
 
-        System.out.println("false");
         return false;
     }
 

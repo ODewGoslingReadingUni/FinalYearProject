@@ -5,15 +5,15 @@ import java.util.Collections;
 
 public class Pathfinding {
 
-    public static ArrayList<Coordinate> findPath(Building building, float startX, float startY, float targetX, float targetY){
+    public static int runs = 0;
+
+    public static ArrayList<Coordinate> findPath(Building building, float startX, float startY, float targetX, float targetY, String id){
+        //runs++;
+        //System.out.println("pathfinding runs: " + runs);
+
         //Create lists to store data
         ArrayList<Coordinate> openList = new ArrayList<>();
         ArrayList<Coordinate> closedList = new ArrayList<>();
-
-        /*System.out.println("startX: " + startX);
-        System.out.println("startY: " + startY);
-        System.out.println("targetX: " + targetX);
-        System.out.println("targetY: " + targetY);*/
 
         //Add starting node
         openList.add(new Coordinate(startX, startY, 0, Helper.distance(startX,startY,targetX, targetY)));
@@ -61,7 +61,7 @@ public class Pathfinding {
                 }
 
                 //If node is not traversable, add to closed list
-                if(!building.isTraversable(c.x, c.y)){
+                if(!building.isTraversable(c.x, c.y, id)){
                     closedList.add(c);
                     continue;
                 }
@@ -101,5 +101,6 @@ public class Pathfinding {
         }
         //If coordinate is not already in the list
         list.add(c);
+
     }
 }

@@ -97,7 +97,7 @@ public class Controller {
     public static void runFullDay(){
         time = LocalTime.of(9,0,0);
         while(time.getHour() < 18){
-            doIteration(5);
+            doIteration(10);
         }
         reset();
     }

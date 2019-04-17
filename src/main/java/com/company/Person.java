@@ -5,6 +5,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -31,7 +32,7 @@ public class Person extends AbstractObject{
     private float targetY;
 
     private float toiletNeed;
-    private final float toiletMax = 3000;
+    private final float toiletMax = 5000;
 
     //Constructors----------------------------------------------------------------------------
 
@@ -49,8 +50,8 @@ public class Person extends AbstractObject{
         path = new ArrayList<>();
         data = new ArrayList<>();
 
-        state = "normal";
-        pathType = state;
+        state = "inactive";
+        pathType = "";
         targetX = 0;
         targetY = targetX;
     }
@@ -278,19 +279,23 @@ public class Person extends AbstractObject{
     //Pathfinding and Movement------------------------------------------------------------------
 
     public void iterate(Building building, float timePeriod){
-        toiletNeed += timePeriod;
+        if(building.hasToilet()) toiletNeed += timePeriod;
 
         if(state.equals("outside")){
-            //System.out.println("outside state");
             return;
+        }
+
+        if(state.equals("inactive")){
+            if(!building.checkForCollisionWithPerson(x,y,id)){
+                state = "normal";
+            }
         }
 
         if(state.equals("alarm")){
             //Go to nearest exit
             System.out.println("Alarm state");
             if(pathType.equals("alarm")){
-                move(timePeriod);
-                //System.out.println("moving");
+                move(building, timePeriod);
                 if(atTarget(x,y,targetX,targetY)){
                     state = "outside";
                 }
@@ -298,7 +303,7 @@ public class Person extends AbstractObject{
                 Entrance nearestExit = building.searchForNearestExit(getX(),getY());
                 targetX = nearestExit.x + nearestExit.width/2;
                 targetY = nearestExit.y + nearestExit.height/2;
-                path = Pathfinding.findPath(building,x,y,targetX,targetY);
+                path = Pathfinding.findPath(building,x,y,targetX,targetY, id);
                 pathStage = 0;
                 pathType = "alarm";
             }
@@ -307,26 +312,24 @@ public class Person extends AbstractObject{
             System.out.println("toilet state");
             //Person needs to visit toilet
             if(pathType.equals("toilet")){
-                move(timePeriod);
+                move(building, timePeriod);
                 if(atTarget(x,y,targetX, targetY)){
                     toiletNeed = 0;
                     state = "normal";
                 }
-                //System.out.println("not at target");
             } else {
                 Room nearestToilet = building.searchForNearestToilet(getX(), getY());
                 Coordinate target = nearestToilet.getRandomPointInRoom();
                 targetX = target.x;
                 targetY = target.y;
-                path = Pathfinding.findPath(building, x,y,targetX, targetY);
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                System.out.println("toilet state");
                 pathStage = 0;
                 pathType = "toilet";
             }
         }
         else if(state.equals("normal")){
             //Person follows planned timetable
-
-            System.out.println("normal state");
 
             if(toiletNeed > toiletMax) {
                 state = "toilet";
@@ -336,7 +339,7 @@ public class Person extends AbstractObject{
             if(pathType.equals("normal") && currentActivity.getTime() == Controller.getTime().getHour()){
                 if(currentActivity != null){
                     if(!atTarget(x,y,targetX, targetY)){
-                        move(timePeriod);
+                        move(building, timePeriod);
                     }
                 }
             }
@@ -350,12 +353,16 @@ public class Person extends AbstractObject{
                 state = "outside";
             }
             else{
-                move(timePeriod);
+                move(building, timePeriod);
             }
         }
     }
 
-    public void move(float timePeriod){
+    private void changeState(String state){
+        this.state = state;
+    }
+
+    public void move(Building building, float timePeriod){
         if(hasPath()){
             System.out.println("has path");
             final float INCREMENT = 4;
@@ -363,21 +370,36 @@ public class Person extends AbstractObject{
             //Move if there's a path to follow and we are not at the target
             if(path.size() > 1 && pathStage < path.size() && !atTarget(x,y,targetX, targetY)){
                 Coordinate next = path.get((int)Math.floor(pathStage));
-                if(next.x > x) x += INCREMENT / timePeriod;
-                if(next.y > y) y += INCREMENT / timePeriod;
-                if(next.x < x) x -= INCREMENT / timePeriod;
-                if(next.y < y) y -= INCREMENT / timePeriod;
-                pathStage += 1/timePeriod;
+                if(!building.checkForCollisionWithPerson(next.x, next.y, id)){
+                    if(next.x > x) x += INCREMENT / timePeriod;
+                    if(next.y > y) y += INCREMENT / timePeriod;
+                    if(next.x < x) x -= INCREMENT / timePeriod;
+                    if(next.y < y) y -= INCREMENT / timePeriod;
+                    pathStage += 1/timePeriod;
+                } else {
+                    //Recalculate path if it is blocked by a person
+                    path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                    pathStage = 0;
+                }
+            }
+        } else {
+            System.out.println("no path");
+            if(state.equals("alarm")){
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                pathStage = 0;
             }
         }
-
     }
 
     private boolean atTarget(float x, float y, float targetX, float targetY){
 
         if(x > targetX - 5 && x < targetX + 5 && y > targetY - 5 && y < targetY + 5){
             return true;
-        } else if(pathStage >= path.size()){
+        }
+        else if(path == null){
+            return false;
+        }
+        else if(pathStage >= path.size()){
             return true;
         }
         else return false;
@@ -422,7 +444,7 @@ public class Person extends AbstractObject{
         path = new ArrayList<>();
         data = new ArrayList<>();
 
-        state = "normal";
+        state = "inactive";
         pathType = state;
         targetX = 0;
         targetY = targetX;
@@ -432,6 +454,9 @@ public class Person extends AbstractObject{
 
     private void setCurrentActivity(Building building){
         //Set current activity to the correct one for the time
+        if(getActivityByTime(Controller.getTime().getHour()).getTime() == currentActivity.getTime()){
+            return;
+        }
         currentActivity = getActivityByTime(Controller.getTime().getHour());
 
         if(currentActivity != null){
@@ -440,7 +465,7 @@ public class Person extends AbstractObject{
                 Coordinate target =  nearestExit.getCenter();
                 targetX = target.x;
                 targetY = target.y;
-                path = Pathfinding.findPath(building,x,y,targetX,targetY);
+                path = Pathfinding.findPath(building,x,y,targetX,targetY, id);
                 pathStage = 0;
                 pathType = "leaving";
                 state = "leaving";
@@ -448,7 +473,8 @@ public class Person extends AbstractObject{
             } else {
                 targetX = currentActivity.getX();
                 targetY = currentActivity.getY();
-                path = Pathfinding.findPath(building, x,y,targetX, targetY);
+                System.out.println("next activity state");
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
                 pathStage = 0;
                 pathType = "normal";
             }

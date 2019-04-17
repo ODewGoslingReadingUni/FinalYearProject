@@ -37,8 +37,8 @@ import java.util.Optional;
 
 public class UserInterface extends Application {
 
-    public static final int WIDTH = 1200;
-    public static final int HEIGHT = 700;
+    public static final int WIDTH = 1000;
+    public static final int HEIGHT = 550;
     public static final float SPEED_INCREMENT = (float)10;
 
     public static Stage rootStage;
@@ -404,6 +404,7 @@ public class UserInterface extends Application {
 
     private void draw(GraphicsContext gc){
         //Clear canvas
+        gc.clearRect(0,0,WIDTH, HEIGHT);
         gc.setFill(Color.WHITE);
         gc.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -530,7 +531,8 @@ public class UserInterface extends Application {
         return cp;
     }
 
-    void updateEditPane(){
+    public void updateEditPane(){
+        //editPane = createEditPane();
         editPane.getChildren().clear();
 
         ArrayList<Room> rooms = Controller.getRoomInfo();
@@ -547,6 +549,7 @@ public class UserInterface extends Application {
                 }
             });
             editPane.getChildren().add(rect);
+            //System.out.println("add rectangle");
         }
 
         ArrayList<Wall> walls = Controller.getWallLocations();
@@ -564,6 +567,7 @@ public class UserInterface extends Application {
             });
             rect.setCursor(Cursor.HAND);
             editPane.getChildren().add(rect);
+            //System.out.println("add rectangle");
         }
 
         ArrayList<Door> doors = Controller.getDoorLocations();
@@ -587,6 +591,7 @@ public class UserInterface extends Application {
                 }
             });
             editPane.getChildren().add(rect);
+            //System.out.println("add rectangle");
         }
 
         ArrayList<Person> people = Controller.getPeopleLocations();
@@ -602,6 +607,7 @@ public class UserInterface extends Application {
             });
             circle.setCursor(Cursor.HAND);
             editPane.getChildren().add(circle);
+            //System.out.println("add circle");
         }
     }
 
