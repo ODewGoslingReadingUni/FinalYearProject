@@ -75,7 +75,7 @@ public class Person extends AbstractObject{
         this.entrance = entrance;
 
         if(activities != null) {
-            if(activities.size() > 0)currentActivity = activities.get(activityCount);
+            if(activities.size() > 0)currentActivity = activities.get(0);
             else currentActivity = null;
         }
         else currentActivity = null;
@@ -288,6 +288,7 @@ public class Person extends AbstractObject{
         if(state.equals("inactive")){
             if(!building.checkForCollisionWithPerson(x,y,id)){
                 state = "normal";
+
             }
         }
 
@@ -303,7 +304,7 @@ public class Person extends AbstractObject{
                 Entrance nearestExit = building.searchForNearestExit(getX(),getY());
                 targetX = nearestExit.x + nearestExit.width/2;
                 targetY = nearestExit.y + nearestExit.height/2;
-                path = Pathfinding.findPath(building,x,y,targetX,targetY, id);
+                path = Pathfinding.findPath(building,x,y,targetX,targetY, null);
                 pathStage = 0;
                 pathType = "alarm";
             }
@@ -322,7 +323,7 @@ public class Person extends AbstractObject{
                 Coordinate target = nearestToilet.getRandomPointInRoom();
                 targetX = target.x;
                 targetY = target.y;
-                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, null);
                 System.out.println("toilet state");
                 pathStage = 0;
                 pathType = "toilet";
@@ -339,6 +340,7 @@ public class Person extends AbstractObject{
             if(pathType.equals("normal") && currentActivity.getTime() == Controller.getTime().getHour()){
                 if(currentActivity != null){
                     if(!atTarget(x,y,targetX, targetY)){
+                        System.out.println("moving");
                         move(building, timePeriod);
                     }
                 }
@@ -346,6 +348,8 @@ public class Person extends AbstractObject{
             else {
                 //Set current activity to the correct one for the time
                 setCurrentActivity(building);
+                System.out.println("getting next activity");
+                System.out.println("current activity = " + currentActivity.getTime());
             }
         }
         else if(state.equals("leaving")){
@@ -385,7 +389,7 @@ public class Person extends AbstractObject{
         } else {
             System.out.println("no path");
             if(state.equals("alarm")){
-                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, null);
                 pathStage = 0;
             }
         }
@@ -449,14 +453,17 @@ public class Person extends AbstractObject{
         targetX = 0;
         targetY = targetX;
 
-        setCurrentActivity(building);
+        setInitialActivity(building);
     }
 
     private void setCurrentActivity(Building building){
         //Set current activity to the correct one for the time
-        if(getActivityByTime(Controller.getTime().getHour()).getTime() == currentActivity.getTime()){
+        if(getActivityByTime(Controller.getTime().getHour()).getTime() == currentActivity.getTime() && currentActivity != null){
+            pathType = "normal";
+            System.out.println("exiting setCurrentActivity");
             return;
         }
+
         currentActivity = getActivityByTime(Controller.getTime().getHour());
 
         if(currentActivity != null){
@@ -465,7 +472,7 @@ public class Person extends AbstractObject{
                 Coordinate target =  nearestExit.getCenter();
                 targetX = target.x;
                 targetY = target.y;
-                path = Pathfinding.findPath(building,x,y,targetX,targetY, id);
+                path = Pathfinding.findPath(building,x,y,targetX,targetY, null);
                 pathStage = 0;
                 pathType = "leaving";
                 state = "leaving";
@@ -474,7 +481,33 @@ public class Person extends AbstractObject{
                 targetX = currentActivity.getX();
                 targetY = currentActivity.getY();
                 System.out.println("next activity state");
-                path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, null);
+                pathStage = 0;
+                pathType = "normal";
+            }
+        }
+    }
+
+    void setInitialActivity(Building building){
+        //Set current activity to the correct one for the time
+        currentActivity = getActivityByTime(Controller.getTime().getHour());
+
+        if(currentActivity != null){
+            if(isLastActivity(currentActivity) && Controller.getHour() > currentActivity.getTime()){
+                Entrance nearestExit = building.searchForNearestExit(x,y);
+                Coordinate target =  nearestExit.getCenter();
+                targetX = target.x;
+                targetY = target.y;
+                path = Pathfinding.findPath(building,x,y,targetX,targetY, null);
+                pathStage = 0;
+                pathType = "leaving";
+                state = "leaving";
+
+            } else {
+                targetX = currentActivity.getX();
+                targetY = currentActivity.getY();
+                System.out.println("next activity state");
+                path = Pathfinding.findPath(building, x,y,targetX, targetY, null);
                 pathStage = 0;
                 pathType = "normal";
             }

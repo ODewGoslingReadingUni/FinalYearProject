@@ -144,6 +144,7 @@ public class Building {
 
     public void addPerson(Person person){
         people.add(person);
+        person.setInitialActivity(this);
     }
 
     public void addRoom(Room room){
@@ -282,15 +283,27 @@ public class Building {
     }
 
     public boolean isTraversable(float x, float y, String id){
-        if(checkForCollisionWithDoor(x,y)){
-            //If there is a door, it's traversable
-            return true;
-        } else if(checkForCollisionWithWall(x,y) == null && !checkForCollisionWithPerson(x,y,id)){
-            //If there is no wall it's traversable
-            return true;
+        if(id != null){
+            if(checkForCollisionWithDoor(x,y)){
+                //If there is a door, it's traversable
+                return true;
+            } else if(checkForCollisionWithWall(x,y) == null && !checkForCollisionWithPerson(x,y,id)){
+                //If there is no wall and no person it's traversable
+                return true;
+            }
+            //If neither of the above conditions are true, it's not traversable
+            return false;
+        } else {
+            if(checkForCollisionWithDoor(x,y)){
+                //If there is a door, it's traversable
+                return true;
+            } else if(checkForCollisionWithWall(x,y) == null){
+                //If there is no wall it's traversable
+                return true;
+            }
+            //If neither of the above conditions are true, it's not traversable
+            return false;
         }
-        //If neither of the above conditions are true, it's not traversable
-        return false;
     }
 
     public void resetToStart(){
@@ -452,16 +465,6 @@ public class Building {
                 }
             }
         }
-        /*for(Room r: rooms){
-            //r.removeWall(id);
-            ArrayList<Wall> walls2 = r.getWalls();
-            for(Wall w: walls2){
-                if(w.getId().equals(id)){
-                    System.out.println("delete wall from rooms");
-                    r.removeWall(w);
-                }
-            }
-        }*/
     }
 
     public boolean deleteRoom(String id){

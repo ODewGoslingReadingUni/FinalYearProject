@@ -618,6 +618,7 @@ public class UserInterface extends Application {
         fileChooser.setTitle("Open File");
         File file = fileChooser.showOpenDialog(rootStage);
         Controller.openFile(file);
+        Controller.reset();
         finishEditing();
         draw(canvas.getGraphicsContext2D());
     }
