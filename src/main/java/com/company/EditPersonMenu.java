@@ -86,6 +86,7 @@ public class EditPersonMenu {
                     //Add the person to the data structure
                     Controller.upsertPerson(person);
                     Controller.doUIUpdate();
+
                     editStage.close();
                 } else {
                     //Display validation error
@@ -94,7 +95,6 @@ public class EditPersonMenu {
             } else {
                 float xStart = Controller.findEntranceByName(entranceComboBox.getValue().toString()).getCenter().x;
                 float yStart = Controller.findEntranceByName(entranceComboBox.getValue().toString()).getCenter().y;
-
                 Person personNew = new Person(textFieldName.getText(),
                         xStart,
                         yStart,
@@ -103,6 +103,7 @@ public class EditPersonMenu {
                         Controller.findEntranceByName(entranceComboBox.getValue().toString()));
                 Controller.upsertPerson(personNew);
                 Controller.doUIUpdate();
+
                 editStage.close();
             }
         });

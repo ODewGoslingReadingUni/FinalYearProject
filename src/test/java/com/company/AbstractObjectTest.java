@@ -11,7 +11,7 @@ public class AbstractObjectTest {
     public void getCenter() {
         Entrance entrance = new Entrance(100,100,true);
         Coordinate center = entrance.getCenter();
-        assertEquals(entrance.getX() + 6, center.x, 1);
+        assertEquals(entrance.getX() + 8, center.x, 1);
         assertEquals(entrance.getY() + 3, center.y, 1);
     }
 

@@ -1,16 +1,18 @@
 package com.company;
 
+import java.time.LocalTime;
+
 public class PersonData {
-    private int tick;
+    private float hour;
     private String roomID;
 
-    public PersonData(int tick, String roomID){
-        this.tick = tick;
+    public PersonData(LocalTime time, String roomID){
+        float hour = time.getHour() + ((float)time.getMinute() / 60);
         this.roomID = roomID;
     }
 
-    public int getTick() {
-        return tick;
+    public float getHour() {
+        return hour;
     }
 
     public String getRoomType(){

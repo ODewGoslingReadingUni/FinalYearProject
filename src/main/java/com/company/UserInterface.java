@@ -24,6 +24,7 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.paint.Color;
@@ -74,7 +75,7 @@ public class UserInterface extends Application {
         AnimationTimer timer = createAnimationTimer(canvas.getGraphicsContext2D());
 
         //Set up the stage and show it
-        rootStage.setTitle("Building Model v0");
+        rootStage.setTitle("Building Model Version 1.00");
         rootStage.setScene(scene);
         rootStage.show();
 
@@ -90,7 +91,6 @@ public class UserInterface extends Application {
 
     private BorderPane createUserInterface(){
         canvas = createCanvas();
-        editPane = createEditPane();
 
         BorderPane borderPane = new BorderPane();
         borderPane.setCenter(canvas);
@@ -102,6 +102,28 @@ public class UserInterface extends Application {
     //Create UI components
     private Canvas createCanvas(){
         canvas = new Canvas(WIDTH,HEIGHT);
+
+        ContextMenuEdit contextMenuEdit = new ContextMenuEdit(canvas);
+
+        canvas.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
+            @Override
+            public void handle(ContextMenuEvent event) {
+                contextMenuEdit.contextMenuRequest(event.getScreenX(), event.getScreenY(), event.getX(), event.getY());
+            }
+        });
+
+        canvas.setOnMouseClicked(mouseEvent -> {
+            contextMenuEdit.hideMenu();
+        });
+
+        canvas.setOnMousePressed(mouseEvent -> {
+            if(mouseEvent.isPrimaryButtonDown()){
+                Controller.openObjectByLocation((float)mouseEvent.getX(), (float) mouseEvent.getY());
+            }
+        });
+
+        canvas.setCursor(Cursor.HAND);
+
         return canvas;
     }
 
@@ -215,7 +237,7 @@ public class UserInterface extends Application {
         reportingMenuItems.add(viewReportsItem);
 
         Menu reportingMenu = createMenu("Reporting", reportingMenuItems);
-        menuBar.getMenus().add(reportingMenu);
+        //menuBar.getMenus().add(reportingMenu);
 
         MenuItem resetItem = new MenuItem("Reset");
         resetItem.setOnAction(actionEvent -> {
@@ -277,7 +299,7 @@ public class UserInterface extends Application {
     private Button createSlowDownButton(){
         Button button = new Button("Slower");
         button.setOnAction((event) -> {
-            if(animationSpeed.get() > SPEED_INCREMENT) animationSpeed.set(animationSpeed.get() - SPEED_INCREMENT);
+            if(animationSpeed.get() > 0) animationSpeed.set(animationSpeed.get() - SPEED_INCREMENT);
         });
         return button;
     }
@@ -302,7 +324,7 @@ public class UserInterface extends Application {
         return button;
     }
 
-    private Stage createEditWallMenu(Wall wall){
+    public Stage createEditWallMenu(Wall wall){
 
         startEditing();
 
@@ -312,7 +334,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private Stage createEditWallMenu(float x, float y){
+    public Stage createEditWallMenu(float x, float y){
         startEditing();
 
         EditWallMenu editWallMenu = new EditWallMenu(x,y);
@@ -327,7 +349,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private Stage createEditPersonMenu(Person person){
+    public Stage createEditPersonMenu(Person person){
 
         startEditing();
 
@@ -337,7 +359,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private Stage createEditRoomMenu(Room room){
+    public Stage createEditRoomMenu(Room room){
         startEditing();
 
         EditRoomMenu editRoomMenu = new EditRoomMenu(room);
@@ -346,7 +368,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private Stage createEditDoorMenu(Door door){
+    public Stage createEditDoorMenu(Door door){
         startEditing();
 
         EditDoorMenu editDoorMenu = new EditDoorMenu(door);
@@ -355,7 +377,7 @@ public class UserInterface extends Application {
         return editStage;
     }
 
-    private Stage createEditEntranceMenu(Entrance entrance){
+    public Stage createEditEntranceMenu(Entrance entrance){
         EditEntranceMenu editEntranceMenu = new EditEntranceMenu(entrance);
 
         return editEntranceMenu.getEditEntranceStage();
@@ -410,11 +432,18 @@ public class UserInterface extends Application {
 
         //Draw building and people
         drawFloors(gc, Controller.getRoomInfo());
-        drawPeople(gc, Controller.getPeopleLocations());
         drawWalls(gc, Controller.getWallLocations());
         drawDoors(gc, Controller.getDoorLocations());
+        drawPeople(gc, Controller.getPeopleLocations());
 
-        timeProperty.setValue(Controller.getTime().getHour() + " : " + Controller.getTime().getMinute() + " : " + Controller.getTime().getSecond());
+        //Update the field that displays the time with the correct time
+        timeProperty.setValue(Controller.getTime().getHour() + " : "
+                + Controller.getTime().getMinute() + " : "
+                + Controller.getTime().getSecond());
+    }
+
+    public void updateUI(){
+        draw(canvas.getGraphicsContext2D());
     }
 
     private void drawPeople(GraphicsContext gc, ArrayList<Person> people){
@@ -459,19 +488,21 @@ public class UserInterface extends Application {
 
     //Methods to change application state
     private void startEditing(){
-        pauseAnimation();
-        editButtonProperty.setValue("Stop Editing");
-        editMode.set(true);
+        if(!editMode.get()){
+            pauseAnimation();
+            editButtonProperty.setValue("Stop Editing");
+            editMode.set(true);
 
-        root.setCenter(editPane);
+            //root.setCenter(editPane);
 
-        updateEditPane();
+            //updateEditPane();
+        }
     }
 
     private void finishEditing(){
         editButtonProperty.setValue("Edit");
         editMode.set(false);
-        root.setCenter(canvas);
+        //root.setCenter(canvas);
         draw(canvas.getGraphicsContext2D());
     }
 
@@ -692,9 +723,13 @@ public class UserInterface extends Application {
         //Show start and end time
         Duration difference = Duration.between(startTime, endTime);
         long diffSeconds = difference.getSeconds();
+        Font font = new Font(16);
         Label startTimeLabel = new Label("Start Time: " +  startTime.toString());
+        startTimeLabel.setFont(font);
         Label endTimeLabel = new Label("End Time: " + endTime.toString());
+        endTimeLabel.setFont(font);
         Label differenceLabel = new Label("Time Taken: " + diffSeconds + " seconds");
+        differenceLabel.setFont(font);
 
         VBox vbox = new VBox();
         vbox.getChildren().add(startTimeLabel);
@@ -709,7 +744,7 @@ public class UserInterface extends Application {
 
         //Create stage/scene
         Stage reportStage = new Stage();
-        reportStage.setTitle("Evacutation Report");
+        reportStage.setTitle("Evacuation Report");
         Scene reportScene = new Scene(gridPane);
         reportStage.setScene(reportScene);
 

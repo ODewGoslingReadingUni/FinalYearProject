@@ -231,15 +231,14 @@ public class Room extends AbstractObject{
         return numericData;
     }
 
-
     public Coordinate getRandomPointInRoom(){
         Random r = new Random();
         int x, y;
 
         do{
-            x = r.nextInt((int)width + 1) + (int)this.x;
-            y = r.nextInt((int)height + 1) + (int)this.y;
-        } while (checkForCollisionWithRoomWalls(x,y));
+            x = r.nextInt((int)width  - 30) + (int)this.x + 30;
+            y = r.nextInt((int)height - 30) + (int)this.y + 30;
+        } while (checkForCollisionWithRoomWalls(x,y) || Controller.isTraversible(x,y,""));
 
         return new Coordinate(x,y);
     }

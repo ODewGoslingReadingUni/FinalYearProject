@@ -20,7 +20,7 @@ public class Building {
     private ArrayList<EvacuationData> evacuationDataList;
 
     private float dataTimer;
-    private final float dataTimerMax = 300; //Every 5 minutes
+    private final float dataTimerMax = 60; //Every 1 minutes
 
     public Building(){
         walls = new ArrayList<Wall>();
@@ -43,7 +43,8 @@ public class Building {
     }
 
     public ArrayList<Wall> getAllWalls(){
-        ArrayList<Wall> wallList = walls;
+        ArrayList<Wall> wallList = new ArrayList<>();
+        wallList.addAll(walls);
         for(Room r: rooms){
             for(Wall w: r.getWalls()){
                 wallList.add(w);
@@ -284,6 +285,7 @@ public class Building {
 
     public boolean isTraversable(float x, float y, String id){
         if(id != null){
+            //Do not check for collisions with people
             if(checkForCollisionWithDoor(x,y)){
                 //If there is a door, it's traversable
                 return true;
@@ -294,6 +296,7 @@ public class Building {
             //If neither of the above conditions are true, it's not traversable
             return false;
         } else {
+            //Check for collisions with people
             if(checkForCollisionWithDoor(x,y)){
                 //If there is a door, it's traversable
                 return true;
@@ -322,6 +325,7 @@ public class Building {
             p.setState("alarm");
         }
     }
+
 
     //Searching Methods
     public Person searchForPersonById(String id){
@@ -504,7 +508,7 @@ public class Building {
 
             for(Person p: people){
                 String roomID = getRoomFromPoint(p.getX(), p.getY());
-                if(roomID != null) p.recordPersonData(new PersonData(Controller.getTick(), roomID));
+                if(roomID != null) p.recordPersonData(new PersonData(Controller.getTime(), roomID));
             }
             dataTimer = 0;
         } else {
@@ -560,6 +564,7 @@ public class Building {
     private void recordEvacuationData(){
         long timeSinceEvacuation = Duration.between(evacuationStartTime, Controller.getTime()).getSeconds();
         evacuationDataList.add(new EvacuationData(numPeopleInBuilding(), timeSinceEvacuation));
+        System.out.println("number of people in building: " + numPeopleInBuilding());
     }
 
     public ArrayList<NumericData> getEvacuationDataAsNumericData(){
@@ -583,5 +588,9 @@ public class Building {
 
     public LocalTime getEvacuationStartTime() {
         return evacuationStartTime;
+    }
+
+    public void clearEvacuationData(){
+        evacuationDataList = new ArrayList<EvacuationData>();
     }
 }

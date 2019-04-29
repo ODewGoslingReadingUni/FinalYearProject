@@ -8,15 +8,17 @@ public class Pathfinding {
     public static int runs = 0;
 
     public static ArrayList<Coordinate> findPath(Building building, float startX, float startY, float targetX, float targetY, String id){
-        //runs++;
-        //System.out.println("pathfinding runs: " + runs);
-
         //Create lists to store data
         ArrayList<Coordinate> openList = new ArrayList<>();
         ArrayList<Coordinate> closedList = new ArrayList<>();
 
         //Add starting node
-        openList.add(new Coordinate(startX, startY, 0, Helper.distance(startX,startY,targetX, targetY)));
+        if(Controller.isTraversible(targetX, targetY, "")){
+            openList.add(new Coordinate(startX, startY, 0, Helper.distance(startX,startY,targetX, targetY)));
+        }
+        else {
+            return null;
+        }
 
         //Loop until we find the target node
         while(openList.size() > 0){
@@ -31,14 +33,12 @@ public class Pathfinding {
                 }
             }
 
-            //System.out.println("current node x: " + currentNode.x + " y: " + currentNode.y + " f: " + currentNode.f);
-
             openList.remove(currentNode);
             closedList.add(currentNode);
 
             //Checking if we have reached the target
-            if(Helper.approximatelyEqual(currentNode.x, targetX, 4) && Helper.approximatelyEqual(currentNode.y, targetY, 4)){
-                System.out.println("Target Reached");
+            if(Helper.approximatelyEqual(currentNode.x, targetX, 4)
+                    && Helper.approximatelyEqual(currentNode.y, targetY, 4)){
 
                 ArrayList<Coordinate> pathFromEnd = new ArrayList<>();
                 pathFromEnd.add(currentNode);
@@ -72,9 +72,9 @@ public class Pathfinding {
                 c.f = c.h + c.g;
 
                 useLowestGValue(openList, c);
+
             }
         }
-        System.out.println("no path found");
         return null;
     }
 

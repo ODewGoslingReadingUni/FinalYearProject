@@ -33,6 +33,7 @@ public class Person extends AbstractObject{
 
     private float toiletNeed;
     private final float toiletMax = 5000;
+    private int pathfindingTimer;
 
     //Constructors----------------------------------------------------------------------------
 
@@ -44,7 +45,7 @@ public class Person extends AbstractObject{
         name = "default name";
 
         //Setting internal variables to defaults
-        toiletNeed = 0;
+        toiletNeed = (float)Math.random() * 2500;
         activityCount = 0;
         pathStage = 0;
         path = new ArrayList<>();
@@ -54,6 +55,8 @@ public class Person extends AbstractObject{
         pathType = "";
         targetX = 0;
         targetY = targetX;
+
+        pathfindingTimer = 0;
     }
 
     public Person(float x, float y){
@@ -279,7 +282,7 @@ public class Person extends AbstractObject{
     //Pathfinding and Movement------------------------------------------------------------------
 
     public void iterate(Building building, float timePeriod){
-        if(building.hasToilet()) toiletNeed += timePeriod;
+        if(building.hasToilet()) toiletNeed += 1/timePeriod;
 
         if(state.equals("outside")){
             return;
@@ -288,7 +291,6 @@ public class Person extends AbstractObject{
         if(state.equals("inactive")){
             if(!building.checkForCollisionWithPerson(x,y,id)){
                 state = "normal";
-
             }
         }
 
@@ -312,11 +314,22 @@ public class Person extends AbstractObject{
         else if(state.equals("toilet")){
             System.out.println("toilet state");
             //Person needs to visit toilet
+
+            if(toiletNeed < toiletMax){
+                state = "normal";
+            }
+
             if(pathType.equals("toilet")){
                 move(building, timePeriod);
                 if(atTarget(x,y,targetX, targetY)){
                     toiletNeed = 0;
                     state = "normal";
+                    //System.out.println("Used toilet");
+                    currentActivity = getActivityByTime(Controller.getTime().getHour());
+                    targetX = currentActivity.getX();
+                    targetY = currentActivity.getY();
+                    path = Pathfinding.findPath(building,x,y,targetX,targetY, null);
+                    pathStage = 0;
                 }
             } else {
                 Room nearestToilet = building.searchForNearestToilet(getX(), getY());
@@ -340,7 +353,7 @@ public class Person extends AbstractObject{
             if(pathType.equals("normal") && currentActivity.getTime() == Controller.getTime().getHour()){
                 if(currentActivity != null){
                     if(!atTarget(x,y,targetX, targetY)){
-                        System.out.println("moving");
+                        //System.out.println("moving");
                         move(building, timePeriod);
                     }
                 }
@@ -348,8 +361,8 @@ public class Person extends AbstractObject{
             else {
                 //Set current activity to the correct one for the time
                 setCurrentActivity(building);
-                System.out.println("getting next activity");
-                System.out.println("current activity = " + currentActivity.getTime());
+                //System.out.println("getting next activity");
+                //System.out.println("current activity = " + currentActivity.getTime());
             }
         }
         else if(state.equals("leaving")){
@@ -369,21 +382,37 @@ public class Person extends AbstractObject{
     public void move(Building building, float timePeriod){
         if(hasPath()){
             System.out.println("has path");
-            final float INCREMENT = 4;
 
             //Move if there's a path to follow and we are not at the target
             if(path.size() > 1 && pathStage < path.size() && !atTarget(x,y,targetX, targetY)){
                 Coordinate next = path.get((int)Math.floor(pathStage));
+
+                float INCREMENT = 4;
+                Coordinate nextPosition = calculateNextPosition(next,building,timePeriod);
+
                 if(!building.checkForCollisionWithPerson(next.x, next.y, id)){
-                    if(next.x > x) x += INCREMENT / timePeriod;
-                    if(next.y > y) y += INCREMENT / timePeriod;
-                    if(next.x < x) x -= INCREMENT / timePeriod;
-                    if(next.y < y) y -= INCREMENT / timePeriod;
-                    pathStage += 1/timePeriod;
+                    if(60/timePeriod < 40) {
+                        if (next.x > x) x += INCREMENT / timePeriod;
+                        if (next.y > y) y += INCREMENT / timePeriod;
+                        if (next.x < x) x -= INCREMENT / timePeriod;
+                        if (next.y < y) y -= INCREMENT / timePeriod;
+                        pathStage += 1/timePeriod;
+                    }else {
+                        x = next.x;
+                        y = next.y;
+                        pathStage += 1/timePeriod;
+                    }
+                    System.out.println("can move");
+                    System.out.println("x: " + x + " nextX: " + nextPosition.x);
                 } else {
                     //Recalculate path if it is blocked by a person
-                    path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
-                    pathStage = 0;
+                    System.out.println("cant move");
+                    pathfindingTimer++;
+                    if(pathfindingTimer > 10){
+                        path = Pathfinding.findPath(building, x,y,targetX, targetY, id);
+                        pathStage = 0;
+                        pathfindingTimer = 0;
+                    }
                 }
             }
         } else {
@@ -444,7 +473,7 @@ public class Person extends AbstractObject{
         else currentActivity = null;
 
         //Reset hunger, thirst, toilet need, etc.
-        toiletNeed = 0;
+        toiletNeed = (float) Math.random() * 2500;
         path = new ArrayList<>();
         data = new ArrayList<>();
 
@@ -458,16 +487,18 @@ public class Person extends AbstractObject{
 
     private void setCurrentActivity(Building building){
         //Set current activity to the correct one for the time
-        if(getActivityByTime(Controller.getTime().getHour()).getTime() == currentActivity.getTime() && currentActivity != null){
-            pathType = "normal";
-            System.out.println("exiting setCurrentActivity");
-            return;
+        if(currentActivity != null){
+            if(getActivityByTime(Controller.getTime().getHour()).getTime() == currentActivity.getTime()){
+                pathType = "normal";
+                System.out.println(name + " exiting setCurrentActivity");
+                return;
+            }
         }
 
         currentActivity = getActivityByTime(Controller.getTime().getHour());
 
         if(currentActivity != null){
-            if(isLastActivity(currentActivity) && Controller.getHour() > currentActivity.getTime()){
+            if(isLastActivity(currentActivity) /*&& Controller.getHour() > currentActivity.getTime()*/){
                 Entrance nearestExit = building.searchForNearestExit(x,y);
                 Coordinate target =  nearestExit.getCenter();
                 targetX = target.x;
@@ -519,6 +550,19 @@ public class Person extends AbstractObject{
             if(activity.getTime() < a.getTime()) return false;
         }
         return true;
+    }
+
+    private Coordinate calculateNextPosition(Coordinate next, Building building, float timePeriod){
+        float nextX = x;
+        float nextY = y;
+        final float INCREMENT = 4;
+        if(!building.checkForCollisionWithPerson(next.x, next.y, id)) {
+            if (next.x > x) nextX = x + INCREMENT / timePeriod;
+            if (next.y > y) nextY = y + INCREMENT / timePeriod;
+            if (next.x < x) nextX = x - INCREMENT / timePeriod;
+            if (next.y < y) nextY = y - INCREMENT / timePeriod;
+        }
+        return new Coordinate(nextX, nextY);
     }
 
     @Override

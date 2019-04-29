@@ -29,13 +29,14 @@ public class UIHelper {
 
     }
 
-    public static XYChart makeLineGraph(ArrayList<NumericData> data, String xAxisLabel, String yAxisLabel, String chartName){
+    public static XYChart makeLineGraph(
+            ArrayList<NumericData> data, String xAxisLabel, String yAxisLabel, String chartName){
+
         NumberAxis xAxis = new NumberAxis();
         xAxis.setLabel(xAxisLabel);
         xAxis.setAutoRanging(false);
         xAxis.setLowerBound(lowestXValue(data));
         xAxis.setUpperBound(highestXValue(data));
-        //xAxis.setTickUnit(1);
 
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(yAxisLabel);

@@ -25,6 +25,7 @@ public class Controller {
     public static Person tempPerson;
     private static int tick;
     private static LocalTime time;
+    private static int timer;
 
     //Setup methods
 
@@ -34,12 +35,14 @@ public class Controller {
         activeUI = ui;
         tick = 0;
         time = LocalTime.of(9,0,0);
+        timer = 0;
     }
 
     public static void reset(){
         tick = 0;
         time = LocalTime.of(9,0,0);
         building.resetToStart();
+        timer = 0;
     }
 
     //Getter methods
@@ -87,17 +90,25 @@ public class Controller {
         if(building.evacuationIsFinished()){
             System.out.println("show evacuation data");
             activeUI.showEvacuationData(building.getEvacuationStartTime(), building.getEvacuationEndTime() ,building.getEvacuationDataAsNumericData());
+            building.clearEvacuationData();
             reset();
             activeUI.pauseAnimation();
         }
-        time = time.plusSeconds((long)speed/10);
+
+        timer++;
+
+        if(timer > 5){
+            time = time.plusSeconds((long)speed/10);
+            timer = 0;
+        }
+
         tick++;
     }
 
     public static void runFullDay(){
         time = LocalTime.of(9,0,0);
         while(time.getHour() < 18){
-            doIteration(10);
+            doIteration(50);
         }
         reset();
     }
@@ -107,7 +118,38 @@ public class Controller {
     public static void saveAs(File file){
 
         try{
-            //Create document builder
+            Document doc = createXMLDoc();
+
+            if(doc != null){
+                //Rename file
+                File file2;
+                System.out.println(Helper.getFileExtension(file));
+
+                if(Helper.getFileExtension(file).equals("xml")){
+                    file2 = new File(file.getAbsolutePath());
+                } else{
+                    file2 = new File(file.getAbsolutePath() + ".xml");
+                }
+
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(file2);
+
+                currentFile = file;
+                transformer.transform(source, result);
+            }
+
+            System.out.println("Did not save file");
+
+        } catch(Exception e){
+            System.out.println("Did not save file.");
+        }
+    }
+
+    public static Document createXMLDoc(){
+        //Create document builder
+        try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             Document doc = docBuilder.newDocument();
@@ -120,7 +162,7 @@ public class Controller {
             Element simulationElement = doc.createElement("simulation");
 
             Element hoursElement = doc.createElement("hours");
-            hoursElement.setTextContent(""+ getHour());
+            hoursElement.setTextContent("" + getHour());
             simulationElement.appendChild(hoursElement);
 
             Element minutesElement = doc.createElement("minutes");
@@ -133,44 +175,28 @@ public class Controller {
             Element buildingElement = doc.createElement("Building");
             rootElement.appendChild(buildingElement);
 
-            for(Wall w: getWallList()){
+            for (Wall w : getWallList()) {
                 buildingElement.appendChild(w.getXML(doc, "Wall"));
             }
 
-            for (Person p: getPeopleLocations()){
+            for (Person p : getPeopleLocations()) {
                 buildingElement.appendChild(p.getXML(doc));
             }
 
-            for(Room r: getRoomInfo()){
+            for (Room r : getRoomInfo()) {
                 buildingElement.appendChild(r.getXML(doc));
             }
 
-            for(Door d: getDoorLocations()){
+            for (Door d : getDoorLocations()) {
                 buildingElement.appendChild(d.getXML(doc));
             }
 
-            //Rename file
-            File file2;
-            System.out.println(Helper.getFileExtension(file));
-
-            if(Helper.getFileExtension(file).equals("xml")){
-                file2 = new File(file.getAbsolutePath());
-            } else{
-                file2 = new File(file.getAbsolutePath() + ".xml");
-            }
-
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(file2);
-
-            currentFile = file;
-            transformer.transform(source, result);
-
-        } catch(Exception e){
-            System.out.println("Did not save file.");
+            return doc;
+        }catch(Exception e){
+            return null;
         }
     }
+
 
     public static void save(){
         if(currentFile != null) saveAs(currentFile);
@@ -383,7 +409,7 @@ public class Controller {
         } else{
             System.out.println("Cannot add door, point is not on a wall");
         }
-        activeUI.updateEditPane();
+        doUIUpdate();
     }
 
     public static void upsertPerson(Person person){
@@ -460,7 +486,9 @@ public class Controller {
     //Miscellaneous methods
 
     public static void doUIUpdate(){
-        activeUI.updateEditPane();
+        if(activeUI != null){
+            activeUI.updateUI();
+        }
     }
 
     public static void triggerFireAlarm(){
@@ -498,5 +526,47 @@ public class Controller {
     public static String validateEntranceName(String entranceName, String entranceId){
         String validationError = building.checkEntranceNameIsUnique(entranceName, entranceId);
         return validationError;
+    }
+
+    public static void openObjectByLocation(float x, float y){
+
+        //Highest priority-people
+        for(Person p: getPeopleLocations()){
+            if(p.checkForCollision(x,y)){
+                activeUI.createEditPersonMenu(p);
+                return;
+            }
+        }
+
+        for(Door d: getDoorLocations()){
+            if(d.checkForCollision(x,y)){
+                if(d.getDoorType().equals("Entrance")){
+                    activeUI.createEditEntranceMenu((Entrance)d);
+                    return;
+                }
+                else {
+                    activeUI.createEditDoorMenu(d);
+                    return;
+                }
+            }
+        }
+
+        for(Wall w: getWallLocations()){
+            if(w.checkForCollision(x,y)){
+                activeUI.createEditWallMenu(w);
+                return;
+            }
+        }
+
+        for(Room r: getRoomInfo()){
+            if(r.checkForCollision(x,y)){
+                activeUI.createEditRoomMenu(r);
+                return;
+            }
+        }
+    }
+
+    public static boolean isTraversible(float x, float y, String id){
+        return building.isTraversable(x,y,id);
     }
 }

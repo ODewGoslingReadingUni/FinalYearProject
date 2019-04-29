@@ -21,11 +21,11 @@ public class Door extends AbstractObject {
         id = UUID.randomUUID().toString();
 
         if(horizontal){
-            width = 12;
+            width = 16;
             height = UserInterface.WALL_THICKNESS;
         } else{
             width = UserInterface.WALL_THICKNESS;
-            height = 12;
+            height = 16;
         }
     }
 

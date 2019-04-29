@@ -20,27 +20,29 @@ public class Entrance extends Door{
     public Entrance(float x, float y, boolean horizontal){
         this.x = x;
         this.y = y;
+        name = "Entrance";
         id = UUID.randomUUID().toString();
 
         if(horizontal){
-            width = 12;
+            width = 16;
             height = UserInterface.WALL_THICKNESS;
         } else{
             width = UserInterface.WALL_THICKNESS;
-            height = 12;
+            height = 16;
         }
     }
 
     public Entrance(float x, float y, boolean horizontal, String id){
         this.x = x;
         this.y = y;
+        name = "Entrance";
 
         if(horizontal){
-            width = 12;
+            width = 16;
             height = UserInterface.WALL_THICKNESS;
         } else{
             width = UserInterface.WALL_THICKNESS;
-            height = 12;
+            height = 16;
         }
 
         this.id = id;

@@ -1,5 +1,6 @@
 package com.company;
 
+import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.Pane;
@@ -7,11 +8,11 @@ import javafx.scene.layout.Pane;
 public class ContextMenuEdit {
 
     private ContextMenu contextMenu;
-    private Pane parent;
+    private Node parent;
     private double x;
     private double y;
 
-    public ContextMenuEdit(Pane parent){
+    public ContextMenuEdit(Node parent){
         contextMenu = new ContextMenu();
         this.parent = parent;
         x = 0;
